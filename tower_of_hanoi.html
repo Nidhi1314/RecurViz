@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="en" class="dark"> <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tower of Hanoi - Dark Simulation</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Dark Theme is now the default */
+        :root {
+            --bg-color: #111827;
+            --panel-bg-color: #1f2937;
+            --text-primary: #f9fafb;
+            --text-secondary: #9ca3af;
+            --border-color: #374151;
+            --accent-color: #6366f1;
+            --accent-hover: #4f46e5;
+            --green-color: #22c55e;
+            --green-hover: #16a34a;
+            --gray-color: #9ca3af;
+            --gray-hover: #d1d5db;
+            --canvas-bg: #374151;
+            --tower-base: #4b5563;
+            --tower-pole: #6b7280;
+            --shadow-color: rgba(0, 0, 0, 0.3);
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+        }
+
+        .panel {
+            background-color: var(--panel-bg-color);
+            box-shadow: 0 4px 12px var(--shadow-color);
+            border-radius: 0.75rem;
+            border: 1px solid var(--border-color);
+        }
+
+        canvas {
+            background-color: var(--canvas-bg);
+            display: block;
+            margin: 0 auto;
+            border-radius: 0.5rem;
+            cursor: pointer;
+        }
+        
+        .btn {
+            transition: all 0.2s ease-in-out;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            padding: 0.75rem 1rem;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 2px 8px var(--shadow-color);
+        }
+
+        .btn-primary { background-color: var(--accent-color); }
+        .btn-primary:hover { background-color: var(--accent-hover); }
+        .btn-secondary { background-color: var(--green-color); }
+        .btn-secondary:hover { background-color: var(--green-hover); }
+        .btn-tertiary { color: #1f2937; background-color: var(--gray-color); }
+        .btn-tertiary:hover { background-color: var(--gray-hover); }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        input[type="range"] {
+            -webkit-appearance: none;
+            appearance: none;
+            background: transparent;
+            cursor: pointer;
+            width: 100%;
+        }
+        input[type="range"]::-webkit-slider-runnable-track {
+            background: var(--border-color);
+            height: 0.5rem;
+            border-radius: 0.25rem;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            margin-top: -4px;
+            background-color: var(--accent-color);
+            height: 1.25rem;
+            width: 1.25rem;
+            border-radius: 50%;
+        }
+
+        .modal-backdrop {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+            z-index: 1000;
+        }
+        .modal-backdrop.visible {
+            opacity: 1;
+            visibility: visible;
+        }
+        .modal-content {
+            transform: scale(0.95);
+            transition: transform 0.3s ease;
+        }
+        .modal-backdrop.visible .modal-content {
+            transform: scale(1);
+        }
+    </style>
+</head>
+<body class="flex flex-col items-center min-h-screen p-4 sm:p-6">
+
+    <header class="w-full max-w-6xl mx-auto flex justify-center items-center mb-6">
+        <h1 class="text-3xl sm:text-4xl font-bold">Tower of Hanoi</h1>
+    </header>
+
+    <div class="w-full max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="lg:col-span-2">
+            <canvas id="hanoiCanvas"></canvas>
+        </div>
+
+        <div class="panel w-full p-6 space-y-6">
+            <div>
+                <h2 class="text-2xl font-semibold mb-4">Controls</h2>
+                <div class="space-y-4">
+                    <div>
+                        <label for="diskCount" class="block text-sm font-medium text-secondary mb-2">Number of Disks: <span id="diskCountValue" class="font-bold text-accent-color text-lg">4</span></label>
+                        <input type="range" id="diskCount" min="3" max="10" value="4">
+                    </div>
+                    <div class="flex flex-col gap-3 pt-2">
+                        <button id="startButton" class="btn btn-primary text-white">Show Solution</button>
+                        <button id="practiceButton" class="btn btn-secondary text-white">Practice Mode</button>
+                        <button id="resetButton" class="btn btn-tertiary">Reset</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pt-6 border-t border-border-color space-y-6">
+                <div>
+                    <h3 class="text-xl font-semibold mb-3">Current Action</h3>
+                    <p id="currentActionText" class="text-center bg-bg-color p-3 rounded-md min-h-[60px] flex items-center justify-center text-secondary">Select a mode to begin.</p>
+                </div>
+                <div>
+                    <h3 class="text-xl font-semibold mb-3">Statistics</h3>
+                    <div class="space-y-2 text-secondary">
+                        <div class="flex justify-between items-center"><span>Moves:</span><span id="moveCount" class="font-bold text-lg text-primary">0</span></div>
+                        <div class="flex justify-between items-center"><span>Minimum Moves:</span><span id="minMoves" class="font-bold text-lg text-primary">0</span></div>
+                        <div id="timer-container" class="flex justify-between items-center hidden"><span>Time:</span><span id="timer" class="font-bold text-lg text-primary">00:00</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div id="winModal" class="modal-backdrop">
+        <div class="modal-content panel p-8 max-w-sm w-full text-center space-y-4">
+            <h2 class="text-3xl font-bold text-green-500">Congratulations!</h2>
+            <p class="text-secondary">You solved the puzzle.</p>
+            <div class="text-left space-y-2 pt-4 text-primary">
+                <div class="flex justify-between"><span>Your Moves:</span><strong id="finalMoveCount">0</strong></div>
+                <div class="flex justify-between"><span>Minimum Moves:</span><strong id="finalMinMoves">0</strong></div>
+                <div class="flex justify-between"><span>Your Time:</span><strong id="finalTime">00:00</strong></div>
+            </div>
+            <button id="playAgainButton" class="btn btn-primary text-white w-full mt-4">Play Again</button>
+        </div>
+    </div>
+
+
+    <script>
+        // --- UI Elements ---
+        const canvas = document.getElementById('hanoiCanvas');
+        const ctx = canvas.getContext('2d');
+        const diskCountSlider = document.getElementById('diskCount');
+        const diskCountValue = document.getElementById('diskCountValue');
+        const startButton = document.getElementById('startButton');
+        const practiceButton = document.getElementById('practiceButton');
+        const resetButton = document.getElementById('resetButton');
+        const moveCountDisplay = document.getElementById('moveCount');
+        const minMovesDisplay = document.getElementById('minMoves');
+        const currentActionText = document.getElementById('currentActionText');
+        
+        const winModal = document.getElementById('winModal');
+        const playAgainButton = document.getElementById('playAgainButton');
+        const finalMoveCount = document.getElementById('finalMoveCount');
+        const finalMinMoves = document.getElementById('finalMinMoves');
+        const finalTime = document.getElementById('finalTime');
+        const timerContainer = document.getElementById('timer-container');
+        const timerDisplay = document.getElementById('timer');
+        
+        // --- Game State ---
+        let numDisks = 4;
+        let towers = [[], [], []];
+        let moves = [];
+        let moveCount = 0;
+        let isAnimating = false;
+        let gameMode = null; // 'solution' or 'practice'
+        let heldDisk = null;
+        let hoveredTower = -1; // -1 means no tower is hovered
+
+        // --- Timer State ---
+        let timerInterval;
+        let startTime;
+
+        const diskColors = ['#2dd4bf', '#34d399', '#4ade80', '#60a5fa', '#818cf8', '#a78bfa', '#c084fc', '#e879f9', '#f472b6', '#fb7185'];
+
+        // --- Timer Logic ---
+        function startTimer() {
+            if (timerInterval) clearInterval(timerInterval);
+            startTime = Date.now();
+            timerContainer.classList.remove('hidden');
+            timerInterval = setInterval(updateTimerDisplay, 1000);
+        }
+
+        function stopTimer() {
+            clearInterval(timerInterval);
+        }
+
+        function resetTimer() {
+            stopTimer();
+            timerDisplay.textContent = '00:00';
+            timerContainer.classList.add('hidden');
+        }
+
+        function updateTimerDisplay() {
+            const elapsedSeconds = Math.floor((Date.now() - startTime) / 1000);
+            const minutes = Math.floor(elapsedSeconds / 60).toString().padStart(2, '0');
+            const seconds = (elapsedSeconds % 60).toString().padStart(2, '0');
+            timerDisplay.textContent = `${minutes}:${seconds}`;
+        }
+
+        // --- Setup and Drawing ---
+        function resizeCanvas() {
+            const container = canvas.parentElement;
+            canvas.width = container.clientWidth;
+            canvas.height = Math.min(window.innerHeight * 0.7, 500);
+        }
+
+        function setup() {
+            resizeCanvas();
+            moveCount = 0;
+            moves = [];
+            towers = [[], [], []];
+            for (let i = numDisks; i > 0; i--) towers[0].push(i);
+            updateStats();
+            currentActionText.textContent = 'Select a mode to begin.';
+            resetTimer();
+            draw();
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawTowers();
+            drawDisks();
+            if (heldDisk) drawHeldDisk();
+        }
+
+        function drawTowers() {
+            const baseColor = '#4b5563';
+            const poleColor = '#6b7280';
+            const towerWidth = 12, baseHeight = 20, towerHeight = canvas.height * 0.7;
+            const baseY = canvas.height - baseHeight;
+
+            // Base with gradient
+            const baseGradient = ctx.createLinearGradient(0, baseY, 0, canvas.height);
+            baseGradient.addColorStop(0, baseColor);
+            baseGradient.addColorStop(1, '#374151');
+            ctx.fillStyle = baseGradient;
+            ctx.fillRect(canvas.width * 0.05, baseY, canvas.width * 0.9, baseHeight);
+
+            // Poles with gradient
+            for (let i = 0; i < 3; i++) {
+                const x = canvas.width / 6 + i * canvas.width / 3;
+                const poleGradient = ctx.createLinearGradient(x - towerWidth / 2, 0, x + towerWidth / 2, 0);
+                poleGradient.addColorStop(0, '#4b5563');
+                poleGradient.addColorStop(0.5, poleColor);
+                poleGradient.addColorStop(1, '#4b5563');
+                ctx.fillStyle = poleGradient;
+                ctx.fillRect(x - towerWidth / 2, baseY - towerHeight, towerWidth, towerHeight);
+
+                // Draw hover highlight
+                if (i === hoveredTower && gameMode === 'practice' && !isAnimating) {
+                    ctx.fillStyle = 'rgba(255, 255, 255, 0.15)';
+                    ctx.fillRect(x - canvas.width / 6, 0, canvas.width / 3, canvas.height - baseHeight);
+                }
+            }
+        }
+
+        function drawDisks() {
+            const diskHeight = 22, baseHeight = 20, baseY = canvas.height - baseHeight;
+            const maxDiskWidth = canvas.width / 3.5;
+            for (let i = 0; i < 3; i++) {
+                const towerX = canvas.width / 6 + i * canvas.width / 3;
+                for (let j = 0; j < towers[i].length; j++) {
+                    const disk = towers[i][j];
+                    const diskWidth = 30 + (disk / numDisks) * (maxDiskWidth - 30);
+                    const x = towerX - diskWidth / 2;
+                    const y = baseY - (j + 1) * diskHeight;
+                    
+                    const gradient = ctx.createLinearGradient(x, y, x, y + diskHeight);
+                    gradient.addColorStop(0, diskColors[disk - 1]);
+                    gradient.addColorStop(1, tinycolor(diskColors[disk - 1]).darken(15).toString());
+
+                    ctx.fillStyle = gradient;
+                    ctx.fillRect(x, y, diskWidth, diskHeight);
+                    
+                    // Add a subtle top highlight for 3D effect
+                    ctx.fillStyle = tinycolor(diskColors[disk - 1]).lighten(15).toString();
+                    ctx.fillRect(x, y, diskWidth, 3);
+                }
+            }
+        }
+        
+        function drawHeldDisk() {
+            const diskHeight = 22, maxDiskWidth = canvas.width / 3.5;
+            const diskWidth = 30 + (heldDisk.disk / numDisks) * (maxDiskWidth - 30);
+            const towerX = canvas.width / 6 + hoveredTower * canvas.width / 3;
+            const x = towerX - diskWidth / 2;
+            const y = 50; // Held position
+            
+            ctx.globalAlpha = 0.8;
+            const gradient = ctx.createLinearGradient(x, y, x, y + diskHeight);
+            gradient.addColorStop(0, diskColors[heldDisk.disk - 1]);
+            gradient.addColorStop(1, tinycolor(diskColors[heldDisk.disk - 1]).darken(15).toString());
+            ctx.fillStyle = gradient;
+            ctx.fillRect(x, y, diskWidth, diskHeight);
+            ctx.globalAlpha = 1.0;
+        }
+
+        function animateMove(disk, from, to, onComplete) {
+            isAnimating = true;
+            let movingDisk = { disk, x: 0, y: 0 };
+            const diskHeight = 22, baseHeight = 20, baseY = canvas.height - baseHeight;
+            const maxDiskWidth = canvas.width / 3.5;
+            const diskWidth = 30 + (disk / numDisks) * (maxDiskWidth - 30);
+            
+            const startX = canvas.width / 6 + from * canvas.width / 3;
+            const startY = baseY - (towers[from].length + 1) * diskHeight;
+            const endX = canvas.width / 6 + to * canvas.width / 3;
+            const endY = baseY - (towers[to].length) * diskHeight;
+            const topY = 40;
+
+            movingDisk.x = startX;
+            movingDisk.y = startY;
+            let stage = 'up';
+            
+            function loop() {
+                const animationSpeed = 12;
+                if (stage === 'up') {
+                    movingDisk.y -= animationSpeed;
+                    if (movingDisk.y <= topY) {
+                        movingDisk.y = topY;
+                        stage = 'across';
+                    }
+                } else if (stage === 'across') {
+                    const direction = Math.sign(endX - movingDisk.x);
+                    movingDisk.x += direction * animationSpeed;
+                    if (Math.sign(endX - movingDisk.x) !== direction && endX !== movingDisk.x) {
+                         movingDisk.x = endX;
+                         stage = 'down';
+                    }
+                } else if (stage === 'down') {
+                    movingDisk.y += animationSpeed;
+                    if (movingDisk.y >= endY) {
+                        movingDisk.y = endY;
+                        onComplete();
+                        return;
+                    }
+                }
+                
+                draw(); // Redraw static elements
+                // Draw the moving disk
+                const gradient = ctx.createLinearGradient(movingDisk.x - diskWidth/2, movingDisk.y, movingDisk.x - diskWidth/2, movingDisk.y + diskHeight);
+                gradient.addColorStop(0, diskColors[disk - 1]);
+                gradient.addColorStop(1, tinycolor(diskColors[disk - 1]).darken(15).toString());
+                ctx.fillStyle = gradient;
+                ctx.fillRect(movingDisk.x - diskWidth / 2, movingDisk.y - diskHeight, diskWidth, diskHeight);
+
+                requestAnimationFrame(loop);
+            }
+            loop();
+        }
+
+        // --- Game Logic ---
+        function hanoi(n, source, destination, auxiliary) {
+            if (n > 0) {
+                hanoi(n - 1, source, auxiliary, destination);
+                moves.push({ from: source, to: destination });
+                hanoi(n - 1, auxiliary, destination, source);
+            }
+        }
+
+        function startSolution() {
+            if (isAnimating) return;
+            resetSimulation();
+            gameMode = 'solution';
+            hanoi(numDisks, 0, 2, 1);
+            isAnimating = true;
+            setButtonsState(false);
+            currentActionText.textContent = 'Starting solution...';
+            runNextSolutionMove();
+        }
+        
+        function runNextSolutionMove() {
+            if (moves.length === 0) {
+                isAnimating = false;
+                setButtonsState(true);
+                currentActionText.textContent = 'Solution finished!';
+                draw();
+                return;
+            }
+            const move = moves.shift();
+            const disk = towers[move.from].pop();
+            currentActionText.innerHTML = `Move Disk <strong>${disk}</strong> from Tower <strong>${move.from + 1}</strong> to Tower <strong>${move.to + 1}</strong>`;
+            
+            animateMove(disk, move.from, move.to, () => {
+                towers[move.to].push(disk);
+                moveCount++;
+                updateStats();
+                setTimeout(runNextSolutionMove, 150);
+            });
+        }
+        
+        function startPracticeMode() {
+            if (isAnimating) return;
+            resetSimulation();
+            gameMode = 'practice';
+            setButtonsState(false);
+            resetButton.disabled = false;
+            currentActionText.textContent = 'Click a tower to pick up a disk.';
+        }
+        
+        function handleUserMove(clickedTower) {
+            if (isAnimating || clickedTower === -1) return;
+
+            if (moveCount === 0 && heldDisk === null && towers[clickedTower].length > 0) {
+                startTimer();
+            }
+
+            if (heldDisk === null) {
+                if (towers[clickedTower].length > 0) {
+                    heldDisk = { disk: towers[clickedTower].pop(), fromTower: clickedTower };
+                    currentActionText.textContent = 'Click a tower to place the disk.';
+                    draw();
+                }
+            } else {
+                if (clickedTower === heldDisk.fromTower) {
+                    towers[heldDisk.fromTower].push(heldDisk.disk);
+                    heldDisk = null;
+                    currentActionText.textContent = 'Move cancelled. Click a tower to pick up a disk.';
+                    draw();
+                    return;
+                }
+
+                const targetTower = towers[clickedTower];
+                const isValidMove = targetTower.length === 0 || heldDisk.disk < targetTower[targetTower.length - 1];
+                
+                if (isValidMove) {
+                    currentActionText.innerHTML = `Moving Disk <strong>${heldDisk.disk}</strong>...`;
+                    const { disk, fromTower } = heldDisk;
+                    
+                    animateMove(disk, fromTower, clickedTower, () => {
+                        towers[clickedTower].push(disk);
+                        moveCount++;
+                        updateStats();
+                        isAnimating = false;
+                        heldDisk = null;
+                        checkWin();
+                        draw();
+                    });
+                } else {
+                    currentActionText.textContent = 'Invalid move! A larger disk cannot go on a smaller one.';
+                    towers[heldDisk.fromTower].push(heldDisk.disk);
+                    heldDisk = null;
+                    draw();
+                    setTimeout(() => {
+                        if (gameMode === 'practice' && !isAnimating) currentActionText.textContent = 'Click a tower to pick up a disk.';
+                    }, 2000);
+                }
+            }
+        }
+        
+        function checkWin() {
+            if (towers[2].length === numDisks) {
+                stopTimer();
+                currentActionText.innerHTML = `<span class="text-green-500">You solved it!</span>`;
+                gameMode = null;
+                setButtonsState(true);
+                showWinModal();
+            } else {
+                currentActionText.textContent = 'Click a tower to pick up a disk.';
+            }
+        }
+
+        function showWinModal() {
+            finalMoveCount.textContent = moveCount;
+            finalMinMoves.textContent = Math.pow(2, numDisks) - 1;
+            finalTime.textContent = timerDisplay.textContent;
+            winModal.classList.add('visible');
+        }
+        
+        function hideWinModal() {
+            winModal.classList.remove('visible');
+        }
+
+        function resetSimulation() {
+            isAnimating = false;
+            heldDisk = null;
+            gameMode = null;
+            setButtonsState(true);
+            hideWinModal();
+            setup();
+        }
+
+        function setButtonsState(enabled) {
+            startButton.disabled = !enabled;
+            practiceButton.disabled = !enabled;
+            diskCountSlider.disabled = !enabled;
+        }
+
+        function updateStats() {
+            moveCountDisplay.textContent = moveCount;
+            minMovesDisplay.textContent = Math.pow(2, numDisks) - 1;
+        }
+
+        // --- Event Listeners ---
+        diskCountSlider.addEventListener('input', (e) => {
+            if (isAnimating) return;
+            numDisks = parseInt(e.target.value);
+            diskCountValue.textContent = numDisks;
+            resetSimulation();
+        });
+
+        canvas.addEventListener('mousemove', (event) => {
+            if (gameMode !== 'practice' || isAnimating) {
+                hoveredTower = -1;
+                draw();
+                return;
+            }
+            const rect = canvas.getBoundingClientRect();
+            const x = event.clientX - rect.left;
+            const newHoveredTower = Math.floor(x / (canvas.width / 3));
+            if (newHoveredTower !== hoveredTower) {
+                hoveredTower = newHoveredTower;
+                draw();
+            }
+        });
+
+        canvas.addEventListener('mouseleave', () => {
+            hoveredTower = -1;
+            draw();
+        });
+
+        canvas.addEventListener('click', () => {
+            if (gameMode === 'practice') {
+                handleUserMove(hoveredTower);
+            }
+        });
+        
+        startButton.addEventListener('click', startSolution);
+        practiceButton.addEventListener('click', startPracticeMode);
+        resetButton.addEventListener('click', resetSimulation);
+        playAgainButton.addEventListener('click', resetSimulation);
+        window.addEventListener('resize', () => {
+            resizeCanvas();
+            draw();
+        });
+        
+        // --- Initial Load ---
+        document.addEventListener('DOMContentLoaded', () => {
+            // TinyColor library for color manipulation (makes gradients easier)
+            const script = document.createElement('script');
+            script.src = "https://cdnjs.cloudflare.com/ajax/libs/tinycolor/1.6.0/tinycolor.min.js";
+            script.onload = () => {
+                setup(); // Directly setup the dark theme
+            };
+            document.head.appendChild(script);
+        });
+    </script>
+</body>
+</html>
