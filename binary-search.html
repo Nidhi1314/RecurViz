@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Binary Search - Simulation</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;550;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #111827;
+            --panel-bg-color: #1f2937;
+            --text-primary: #f9fafb;
+            --text-secondary: #9ca3af;
+            --border-color: #374151;
+            --accent-color: #6366f1;
+            --accent-hover: #4f46e5;
+            --green-color: #22c55e;
+            --green-hover: #16a34a;
+            --gray-color: #9ca3af;
+            --gray-hover: #d1d5db;
+            --shadow-color: rgba(0, 0, 0, 0.3);
+
+            /* New colors for Binary Search */
+            --low-color: #3b82f6; /* Blue 500 */
+            --high-color: #ec4899; /* Pink 500 */
+            --mid-color: #10b981; /* Emerald 500 */
+            --found-color: #f59e0b; /* Amber 500 */
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+        }
+
+        .panel {
+            background-color: var(--panel-bg-color);
+            box-shadow: 0 4px 12px var(--shadow-color);
+            border-radius: 0.75rem;
+            border: 1px solid var(--border-color);
+        }
+
+        /* --- START: Visualization Area --- */
+        #visualizationArea {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            padding: 24px;
+            align-items: center;
+            justify-content: center;
+            min-height: 400px;
+            background-color: var(--border-color);
+            border-radius: 0.75rem;
+        }
+
+        .array-cell {
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            font-weight: 600;
+            border: 2px solid var(--panel-bg-color);
+            background-color: var(--bg-color);
+            border-radius: 0.5rem;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .array-cell.disabled {
+            opacity: 0.3;
+            background-color: var(--panel-bg-color);
+        }
+        
+        .array-cell.found {
+            background-color: var(--found-color);
+            border-color: var(--found-color);
+            color: var(--bg-color);
+            transform: scale(1.1);
+        }
+
+        /* --- START: Pointer styles (IMPROVED) --- */
+        .array-cell.low::before,
+        .array-cell.high::before,
+        .array-cell.mid::before {
+            content: '';
+            position: absolute;
+            bottom: -28px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        .array-cell.low::before {
+            content: 'low';
+            color: var(--low-color);
+        }
+        .array-cell.high::before {
+            content: 'high';
+            color: var(--high-color);
+        }
+        
+        /* Base 'mid' pointer */
+        .array-cell.mid::before {
+            content: 'mid';
+            color: var(--mid-color);
+            bottom: -45px; /* So it doesn't overlap */
+        }
+        
+        /* 'mid < target' pointer */
+        .array-cell.mid-too-low::before {
+            content: 'mid < target';
+            color: var(--low-color); /* Blue */
+            bottom: -45px;
+        }
+            
+        /* 'mid > target' pointer */
+        .array-cell.mid-too-high::before {
+            content: 'mid > target';
+            color: var(--high-color); /* Pink */
+            bottom: -45px;
+        }
+        /* --- END: Pointer styles (IMPROVED) --- */
+
+        /* --- END: Visualization Area --- */
+        
+        .btn {
+            transition: all 0.2s ease-in-out;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            padding: 0.75rem 1rem;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 2px 8px var(--shadow-color);
+        }
+
+        .btn-primary { background-color: var(--accent-color); }
+        .btn-primary:hover { background-color: var(--accent-hover); }
+        .btn-tertiary { color: #1f2937; background-color: var(--gray-color); }
+        .btn-tertiary:hover { background-color: var(--gray-hover); }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        input[type="range"], input[type="number"] {
+            -webkit-appearance: none;
+            appearance: none;
+            background: transparent;
+            cursor: pointer;
+            width: 100%;
+        }
+
+        input[type="number"] {
+            background-color: var(--bg-color);
+            border: 1px solid var(--border-color);
+            border-radius: 0.5rem;
+            padding: 0.6rem 0.8rem;
+            color: var(--text-primary);
+        }
+        input[type="number"]::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        
+        input[type="range"]::-webkit-slider-runnable-track {
+            background: var(--border-color);
+            height: 0.5rem;
+            border-radius: 0.25rem;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            margin-top: -4px;
+            background-color: var(--accent-color);
+            height: 1.25rem;
+            width: 1.25rem;
+            border-radius: 50%;
+        }
+
+        /* --- START: Code Highlighting Styles --- */
+        #codeDisplayContainer {
+            overflow-y: auto;
+            background-color: #0d1117;
+            border: 1px solid var(--border-color);
+            font-family: 'Consolas', 'Monaco', monospace;
+            height: 400px; /* Matched to viz area */
+        }
+
+        #codeDisplayContainer pre, #codeDisplayContainer code {
+            height: 100%;
+        }
+
+        .code-line {
+            padding: 0.15rem 0.5rem;
+            display: block;
+            border-radius: 2px;
+            transition: background-color 0.2s ease-in-out;
+            white-space: pre-wrap;
+            min-height: 1.25rem;
+        }
+
+        .code-line.highlight {
+            background-color: #374151;
+            color: var(--text-primary);
+        }
+
+        /* Syntax Highlighting */
+        .cpp-keyword { color: #f97583; }
+        .cpp-function { color: #d2a8ff; }
+        .cpp-comment { color: #8b949e; }
+        .cpp-string { color: #a5d6ff; }
+        .cpp-number { color: #79c0ff; }
+        .cpp-variable { color: #ffa657; }
+        .cpp-operator { color: #f97583; }
+        .cpp-preprocessor { color: #8b949e; }
+        /* --- END: Code Highlighting Styles --- */
+    </style>
+</head>
+<body class="flex flex-col items-center min-h-screen p-4 sm:p-6">
+
+    <header class="w-full max-w-6xl mx-auto flex justify-center items-center mb-6">
+        <h1 class="text-3xl sm:text-4xl font-bold">Binary Search</h1>
+    </header>
+
+    <div class="w-full max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        <div class="lg:col-span-2">
+            <div id="visualizationArea"></div>
+        </div>
+
+        <div classid="cppPanel" class="panel w-full p-6 flex flex-col">
+            <h3 class="text-xl font-semibold mb-2 flex-shrink-0">C++ Code</h3>
+            <div id="codeDisplayContainer" class="rounded-md flex-grow min-h-0">
+                <pre class="text-sm"><code id="codeDisplayArea" class="language-cpp"></code></pre>
+            </div>
+        </div>
+    </div>
+
+    <div class="w-full max-w-6xl mx-auto panel p-6 mt-6">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            
+            <div>
+                <h2 class="text-2xl font-semibold mb-4">Controls</h2>
+                <div class="space-y-4">
+                    <div>
+                        <label for="arraySize" class="block text-sm font-medium text-secondary mb-2">Array Size: <span id="arraySizeValue" class="font-bold text-accent-color text-lg">15</span></label>
+                        <input type="range" id="arraySize" min="5" max="25" value="15">
+                    </div>
+                    <div>
+                        <label for="targetValue" class="block text-sm font-medium text-secondary mb-2">Value to Find</label>
+                        <input type="number" id="targetValue" placeholder="e.g., 42">
+                    </div>
+                    <div class="flex flex-col gap-3 pt-2">
+                        <button id="searchButton" class="btn btn-primary text-white">Search</button>
+                        <button id="resetButton" class="btn btn-tertiary">New Array</button>
+                    </div>
+                </div>
+            </div>
+
+            <div>
+                <h3 class="text-xl font-semibold mb-3">Current Action</h3>
+                <p id="messageText" class="text-center bg-bg-color p-3 rounded-md min-h-[60px] flex items-center justify-center text-secondary">Enter a value to search for.</p>
+            </div>
+
+            <div>
+                <h3 class="text-xl font-semibold mb-3">Statistics</h3>
+                <div class="space-y-2 text-secondary">
+                    <div class="flex justify-between items-center"><span>Comparisons:</span><span id="stepCount" class="font-bold text-lg text-primary">0</span></div>
+                    <div class="flex justify-between items-center"><span>Max Comparisons (O(log n)):</span><span id="maxSteps" class="font-bold text-lg text-primary">0</span></div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        // --- UI Elements ---
+        const visualizationArea = document.getElementById('visualizationArea');
+        const arraySizeSlider = document.getElementById('arraySize');
+        const arraySizeValue = document.getElementById('arraySizeValue');
+        const targetValueInput = document.getElementById('targetValue');
+        const searchButton = document.getElementById('searchButton');
+        const resetButton = document.getElementById('resetButton');
+        const messageText = document.getElementById('messageText');
+        const stepCountDisplay = document.getElementById('stepCount');
+        const maxStepsDisplay = document.getElementById('maxSteps');
+        const codeDisplayArea = document.getElementById('codeDisplayArea');
+
+        // --- Game State ---
+        let array = [];
+        let arraySize = 15;
+        let targetValue = null;
+        let isAnimating = false;
+        let animationSteps = []; // Queue of steps for the animation
+        let animationTimeout;
+        let stepCount = 0;
+
+        // --- Code Highlighting Functions ---
+
+        function syntaxHighlight(text) {
+            let safeText = text.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            return safeText
+                .replace(/(\/\/.*)/g, '<span class="cpp-comment">$1</span>')
+                .replace(/(".*?"|'.*?')/g, '<span class="cpp-string">$1</span>')
+                .replace(/\b(int|return|else|if|while|cout|endl|std|using|namespace|include|vector)\b/g, '<span class="cpp-keyword">$1</span>')
+                .replace(/(#include)/g, '<span class="cpp-preprocessor">$1</span>')
+                .replace(/\b(binarySearch)\b/g, '<span class="cpp-function">$1</span>')
+                .replace(/\b(arr|target|low|high|mid|result)\b/g, '<span class="cpp-variable">$1</span>')
+                .replace(/(&lt;&lt;|>>|==|!=|<=|>=)/g, '<span class="cpp-operator">$1</span>')
+                .replace(/(\b[0-9]+\b)/g, '<span class="cpp-number">$1</span>');
+        }
+
+        function displayCppCode() {
+            // This function now uses your provided recursive code.
+            // The animation IDs have been re-mapped to the correct lines.
+            const code = [
+                { line: 1, text: '#include <iostream>' },
+                { line: 2, text: '#include <vector>' },
+                { line: 3, text: 'using namespace std;' },
+                { line: 4, text: '' },
+                // 'initHigh' maps to the function signature, as it's the "start"
+                { line: 5, text: 'int binarySearch(vector<int>& arr, int low, int high, int target) {', id: 'initHigh' },
+                { line: 6, text: '    // Base case: not found' },
+                // 'whileLoop' maps to the base case check (the equivalent of 'while(low <= high)')
+                { line: 7, text: '    if (low > high)', id: 'whileLoop' },
+                { line: 8, text: '        return -1;', id: 'returnNotFound' },
+                { line: 9, text: '' },
+                { line: 10, text: '    int mid = low + (high - low) / 2;', id: 'calcMid' },
+                { line: 11, text: '' },
+                { line: 12, text: '    // Check if mid is target' },
+                { line: 13, text: '    if (arr[mid] == target)', id: 'checkFound' },
+                { line: 14, text: '        return mid;', id: 'returnFound' },
+                // 'checkRight' maps to the 'else if' condition
+                { line: 15, text: '    else if (arr[mid] < target)', id: 'checkRight' },
+                { line: 16, text: '        return binarySearch(arr, mid + 1, high, target);', id: 'goRight' },
+                // 'checkLeft' maps to the 'else' block
+                { line: 17, text: '    else', id: 'checkLeft' },
+                { line: 18, text: '        return binarySearch(arr, low, mid - 1, target);', id: 'goLeft' },
+                { line: 19, text: '}' },
+            ];
+
+            codeDisplayArea.innerHTML = code.map(line => 
+                `<span class="code-line" id="${line.id || ''}">${syntaxHighlight(line.text)}</span>`
+            ).join('');
+        }
+
+        function highlightCodeLine(lineId) {
+            document.querySelectorAll('.code-line.highlight').forEach(el => el.classList.remove('highlight'));
+            const lineEl = document.getElementById(lineId);
+            if (lineEl) {
+                lineEl.classList.add('highlight');
+            }
+        }
+        
+        // --- Visualization ---
+
+        function generateSortedArray(size) {
+            array = [];
+            let current = Math.floor(Math.random() * 5) + 1;
+            for (let i = 0; i < size; i++) {
+                array.push(current);
+                current += Math.floor(Math.random() * 9) + 1; // Add 1-9
+            }
+        }
+
+        function renderArray(low = -1, high = -1, mid = -1, foundIndex = -1, comparison = null) {
+            visualizationArea.innerHTML = '';
+            
+            array.forEach((value, index) => {
+                const cell = document.createElement('div');
+                cell.className = 'array-cell';
+                cell.textContent = value;
+                
+                // Disabled state
+                if ((low !== -1 && high !== -1) && (index < low || index > high)) {
+                    cell.classList.add('disabled');
+                }
+
+                // Found state (takes precedence)
+                if (index === foundIndex) {
+                    cell.classList.add('found');
+                } else {
+                    // Pointers
+                    if (index === low) cell.classList.add('low');
+                    if (index === high) cell.classList.add('high');
+                    
+                    // Mid pointer with comparison logic
+                    if (index === mid) {
+                        cell.classList.add('mid'); // Base mid class
+                        if (comparison === 'less') {
+                            cell.classList.add('mid-too-low');
+                        } else if (comparison === 'greater') {
+                            cell.classList.add('mid-too-high');
+                        }
+                    }
+                }
+                
+                visualizationArea.appendChild(cell);
+            });
+        }
+
+
+        // --- Game Logic ---
+
+        function resetSimulation() {
+            if (isAnimating) {
+                clearTimeout(animationTimeout);
+                isAnimating = false;
+            }
+            
+            arraySize = parseInt(arraySizeSlider.value);
+            arraySizeValue.textContent = arraySize;
+            
+            generateSortedArray(arraySize);
+            renderArray();
+            updateStats(0);
+            
+            messageText.textContent = 'Enter a value to search for.';
+            messageText.classList.remove('text-green-500', 'text-red-500');
+            targetValueInput.value = '';
+            animationSteps = [];
+            setButtonsState(true);
+            displayCppCode();
+        }
+        
+        function updateStats(steps) {
+            stepCount = steps;
+            stepCountDisplay.textContent = stepCount;
+            maxStepsDisplay.textContent = Math.ceil(Math.log2(arraySize));
+        }
+
+        function setButtonsState(enabled) {
+            searchButton.disabled = !enabled;
+            resetButton.disabled = !enabled;
+            arraySizeSlider.disabled = !enabled;
+            targetValueInput.disabled = !enabled;
+        }
+
+        function startSearch() {
+            if (isAnimating) return;
+            
+            targetValue = parseInt(targetValueInput.value);
+            if (isNaN(targetValue)) {
+                messageText.textContent = 'Please enter a valid number.';
+                messageText.classList.add('text-red-500');
+                return;
+            }
+            
+            isAnimating = true;
+            animationSteps = [];
+            stepCount = 0;
+            updateStats(0); // <-- Reset stats to 0
+            setButtonsState(false);
+            messageText.classList.remove('text-green-500', 'text-red-500');
+            messageText.textContent = `Searching for ${targetValue}...`;
+
+            // Calculate all steps first
+            calculateSearchSteps(targetValue);
+            
+            // Start the animation
+            runNextAnimationStep();
+        }
+
+        function calculateSearchSteps(target) {
+            let low = 0;
+            let high = array.length - 1;
+            
+            animationSteps.push({ low, high, mid: -1, lineId: 'initHigh', message: `Start: low = 0, high = ${high}` });
+
+            while (low <= high) {
+                animationSteps.push({ low, high, mid: -1, lineId: 'whileLoop', message: `Checking if ${low} <= ${high}` });
+                
+                let mid = Math.floor(low + (high - low) / 2);
+                animationSteps.push({ low, high, mid, lineId: 'calcMid', message: `Calculating mid... ${mid}` });
+
+                const midVal = array[mid];
+                
+                // Determine comparison result
+                let comparisonResult = 'equal';
+                if (midVal < target) comparisonResult = 'less';
+                else if (midVal > target) comparisonResult = 'greater';
+
+                // Add the comparison step
+                animationSteps.push({ 
+                    low, high, mid, 
+                    lineId: 'checkFound', // <-- This is the key step
+                    message: `Comparing: Is ${midVal} (mid) ${comparisonResult} to ${target} (target)?`,
+                    comparison: comparisonResult // Pass to renderer
+                });
+
+                if (midVal === target) {
+                    animationSteps.push({ low, high, mid, lineId: 'returnFound', success: true, message: `Found ${target} at index ${mid}!` });
+                    return;
+                }
+                
+                if (midVal < target) {
+                    animationSteps.push({ low, high, mid, lineId: 'goRight', message: `${midVal} < ${target}. Search right.` });
+                    low = mid + 1;
+                } else {
+                    animationSteps.push({ low, high, mid, lineId: 'goLeft', message: `${midVal} > ${target}. Search left.` });
+                    high = mid - 1;
+                }
+            }
+            
+            animationSteps.push({ low, high, mid: -1, lineId: 'returnNotFound', success: false, message: `${target} not found in the array.` });
+        }
+
+        // --- (CORRECTED) runNextAnimationStep Function ---
+        function runNextAnimationStep() {
+            if (animationSteps.length === 0) {
+                isAnimating = false;
+                setButtonsState(true);
+                return;
+            }
+            
+            const step = animationSteps.shift();
+            
+            // (CORRECTED LOGIC) Only increment "Comparisons" when an actual comparison is made
+            if (step.lineId === 'checkFound') {
+                updateStats(stepCount + 1);
+            }
+
+            let foundIdx = -1; // By default, not found
+
+            // Handle end state
+            if (step.success === true) {
+                messageText.classList.add('text-green-500');
+                foundIdx = step.mid; // Set the found index
+            } else if (step.success === false) {
+                messageText.classList.add('text-red-500');
+            }
+            
+            // Update UI
+            messageText.textContent = step.message;
+            highlightCodeLine(step.lineId);
+            // Pass all state to renderArray
+            renderArray(step.low, step.high, step.mid, foundIdx, step.comparison);
+            
+            // Stop animation on success or failure
+            if (step.success === true || step.success === false) {
+                isAnimating = false;
+                setButtonsState(true);
+                resetButton.disabled = false; // Keep reset enabled
+                return;
+            }
+
+            // Continue animation
+            animationTimeout = setTimeout(runNextAnimationStep, 1500); // Slightly longer to read the new text
+        }
+        // --- END (CORRECTED) runNextAnimationStep Function ---
+
+
+        // --- Event Listeners ---
+        arraySizeSlider.addEventListener('input', (e) => {
+            if (isAnimating) return;
+            arraySizeValue.textContent = e.target.value;
+        });
+
+        // Reset when slider is released (to avoid spamming)
+        arraySizeSlider.addEventListener('change', () => {
+            if (isAnimating) return;
+            resetSimulation();
+        });
+
+        searchButton.addEventListener('click', startSearch);
+        resetButton.addEventListener('click', resetSimulation);
+        
+        // --- Initial Load ---
+        document.addEventListener('DOMContentLoaded', () => {
+            resetSimulation();
+        });
+    </script>
+</body>
+</html>

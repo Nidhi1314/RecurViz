@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Merge Sort - Visual Simulation</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Dark Theme Styles (adapted from Tower of Hanoi) */
+        :root {
+            --bg-color: #272a33; /* Dark background */
+            --panel-bg-color: #3f434c; /* Slightly lighter panel */
+            --text-primary: #f2f2f2; /* Light text */
+            --text-secondary: #a9b0b8; /* Muted secondary text */
+            --border-color: #555b66; /* Subtle border */
+            --accent-color: #6366f1; /* Keep accent for buttons/sliders */
+            --accent-hover: #4f46e5;
+            --green-color: #22c55e;
+            --green-hover: #16a34a;
+            --gray-color: #7f8691; /* Adjusted gray for buttons */
+            --gray-hover: #9ca3af;
+            --canvas-bg: #3f434c; /* Canvas matches panel background */
+            --shadow-color: rgba(0, 0, 0, 0.3);
+
+            /* Merge Sort Specific Colors - Adjusted for new palette */
+            --bar-color: #606775; /* Default bar color, similar to image bars */
+            --sorted-color: #22c55e; /* Green for sorted, can be adjusted if needed */
+            --compare-color: #ef4444; /* Red for comparison */
+            --left-color: #3b82f6; /* Blue for left sub-array */
+            --right-color: #eab308; /* Yellow for right sub-array */
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+        }
+
+        .panel {
+            background-color: var(--panel-bg-color);
+            box-shadow: 0 4px 12px var(--shadow-color);
+            border-radius: 0.75rem;
+            border: 1px solid var(--border-color);
+        }
+
+        canvas {
+            background-color: var(--canvas-bg);
+            display: block;
+            margin: 0 auto;
+            border-radius: 0.5rem;
+        }
+        
+        .btn {
+            transition: all 0.2s ease-in-out;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            padding: 0.75rem 1rem;
+            color: var(--text-primary); /* Ensure button text is visible */
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 2px 8px var(--shadow-color);
+        }
+
+        .btn-primary { background-color: var(--accent-color); }
+        .btn-primary:hover { background-color: var(--accent-hover); }
+        .btn-secondary { background-color: var(--green-color); }
+        .btn-secondary:hover { background-color: var(--green-hover); }
+        .btn-tertiary { background-color: var(--gray-color); }
+        .btn-tertiary:hover { background-color: var(--gray-hover); }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        input[type="range"] {
+            -webkit-appearance: none;
+            appearance: none;
+            background: transparent;
+            cursor: pointer;
+            width: 100%;
+        }
+        input[type="range"]::-webkit-slider-runnable-track {
+            background: var(--border-color);
+            height: 0.5rem;
+            border-radius: 0.25rem;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            margin-top: -4px;
+            background-color: var(--accent-color);
+            height: 1.25rem;
+            width: 1.25rem;
+            border-radius: 50%;
+        }
+
+        /* --- START: Code Highlighting Styles --- */
+        #codeDisplayContainer {
+            overflow-y: auto;
+            background-color: #2b2e35; /* Darker background for code, distinct from panel */
+            border: 1px solid var(--border-color);
+            font-family: 'Consolas', 'Monaco', monospace;
+        }
+
+        #codeDisplayContainer pre, #codeDisplayContainer code {
+            height: 100%;
+        }
+
+        .code-line {
+            padding: 0.15rem 0.5rem;
+            display: block;
+            border-radius: 2px;
+            transition: background-color 0.2s ease-in-out;
+            white-space: pre-wrap;
+            min-height: 1.25rem;
+        }
+
+        .code-line.highlight {
+            background-color: #4a4e58; /* Highlight slightly lighter */
+            color: var(--text-primary);
+        }
+
+        /* Syntax Highlighting */
+        .cpp-keyword { color: #f97583; }
+        .cpp-function { color: #d2a8ff; }
+        .cpp-comment { color: #8b949e; }
+        .cpp-string { color: #a5d6ff; }
+        .cpp-number { color: #79c0ff; }
+        .cpp-variable { color: #ffa657; }
+        .cpp-operator { color: #f97583; }
+        .cpp-preprocessor { color: #8b949e; }
+        .cpp-type { color: #79c0ff; }
+        /* --- END: Code Highlighting Styles --- */
+    </style>
+</head>
+<body class="flex flex-col items-center min-h-screen p-4 sm:p-6">
+
+    <header class="w-full max-w-6xl mx-auto flex justify-center items-center mb-6">
+        <h1 class="text-3xl sm:text-4xl font-bold">Merge Sort</h1>
+    </header>
+
+    <div class="w-full max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        <!-- Canvas for Merge Sort --><div class="lg:col-span-2">
+            <canvas id="mergeSortCanvas"></canvas>
+            <div id="helperCanvas" class="mt-4">
+                <canvas id="mergeHelperCanvas"></canvas>
+            </div>
+        </div>
+
+        <!-- Code Panel --><div id="cppPanel" class="panel w-full p-6 flex flex-col">
+            <h3 class="text-xl font-semibold mb-2 flex-shrink-0">C++ Code</h3>
+            <div id="codeDisplayContainer" class="rounded-md flex-grow min-h-0">
+                <pre class="text-sm"><code id="codeDisplayArea" class="language-cpp"></code></pre>
+            </div>
+        </div>
+    </div>
+
+    <!-- Control Panel --><div class="w-full max-w-6xl mx-auto panel p-6 mt-6">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            
+            <div>
+                <h2 class="text-2xl font-semibold mb-4">Controls</h2>
+                <div class="space-y-4">
+                    <div>
+                        <label for="arraySize" class="block text-sm font-medium text-secondary mb-2">Array Size: <span id="arraySizeValue" class="font-bold text-accent-color text-lg">20</span></label>
+                        <input type="range" id="arraySize" min="5" max="100" value="20">
+                    </div>
+                     <div>
+                        <label for="animationSpeed" class="block text-sm font-medium text-secondary mb-2">Animation Speed: <span id="animationSpeedValue" class="font-bold text-accent-color text-lg">150</span> ms</label>
+                        <input type="range" id="animationSpeed" min="20" max="1000" value="150" step="10">
+                    </div>
+                    <div class="flex flex-col gap-3 pt-2">
+                        <button id="startButton" class="btn btn-primary">Start</button>
+                        <button id="resetButton" class="btn btn-tertiary">Reset (New Array)</button>
+                    </div>
+                </div>
+            </div>
+
+            <div>
+                <h3 class="text-xl font-semibold mb-3">Current Action</h3>
+                <p id="currentActionText" class="text-center bg-bg-color p-3 rounded-md min-h-[60px] flex items-center justify-center text-secondary">Press Start to begin.</p>
+            </div>
+
+            <div>
+                <h3 class="text-xl font-semibold mb-3">Statistics</h3>
+                <div class="space-y-2 text-secondary">
+                    <div class="flex justify-between items-center"><span>Comparisons:</span><span id="comparisonCount" class="font-bold text-lg text-primary">0</span></div>
+                    <div id="timer-container" class="flex justify-between items-center hidden"><span>Time:</span><span id="timer" class="font-bold text-lg text-primary">00:00</span></div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+
+    <script>
+        // --- UI Elements ---
+        const canvas = document.getElementById('mergeSortCanvas');
+        const ctx = canvas.getContext('2d');
+        const helperCanvas = document.getElementById('mergeHelperCanvas');
+        const helperCtx = helperCanvas.getContext('2d');
+
+        const arraySizeSlider = document.getElementById('arraySize');
+        const arraySizeValue = document.getElementById('arraySizeValue');
+        const animationSpeedSlider = document.getElementById('animationSpeed');
+        const animationSpeedValue = document.getElementById('animationSpeedValue');
+        const startButton = document.getElementById('startButton');
+        const resetButton = document.getElementById('resetButton');
+        const comparisonCountDisplay = document.getElementById('comparisonCount');
+        const currentActionText = document.getElementById('currentActionText');
+        
+        const timerContainer = document.getElementById('timer-container');
+        const timerDisplay = document.getElementById('timer');
+        const codeDisplayArea = document.getElementById('codeDisplayArea');
+
+        // --- Sort State ---
+        let arraySize = 20;
+        let animationSpeed = 150;
+        let array = [];
+        let steps = [];
+        let currentStep = 0;
+        let isAnimating = false;
+        let comparisonCount = 0;
+        let maxArrayValue = 100;
+
+        // --- Visualization State ---
+        // This object will hold the current state for drawing
+        let visState = {
+            array: [],
+            helperArray: [],
+            leftRange: [-1, -1],
+            rightRange: [-1, -1],
+            compare: [-1, -1],
+            sortedRange: [-1, -1]
+        };
+
+        // --- Timer State ---
+        let timerInterval;
+        let startTime;
+
+        // --- Colors ---
+        const COLORS = {
+            BAR: 'var(--bar-color)',
+            LEFT: 'var(--left-color)',
+            RIGHT: 'var(--right-color)',
+            COMPARE: 'var(--compare-color)',
+            SORTED: 'var(--sorted-color)'
+        };
+
+        // --- Timer Logic ---
+        function startTimer() {
+            if (timerInterval) clearInterval(timerInterval);
+            startTime = Date.now();
+            timerContainer.classList.remove('hidden');
+            timerInterval = setInterval(updateTimerDisplay, 1000);
+        }
+
+        function stopTimer() {
+            clearInterval(timerInterval);
+        }
+
+        function resetTimer() {
+            stopTimer();
+            timerDisplay.textContent = '00:00';
+            timerContainer.classList.add('hidden');
+        }
+
+        function updateTimerDisplay() {
+            const elapsedSeconds = Math.floor((Date.now() - startTime) / 1000);
+            const minutes = Math.floor(elapsedSeconds / 60).toString().padStart(2, '0');
+            const seconds = (elapsedSeconds % 60).toString().padStart(2, '0');
+            timerDisplay.textContent = `${minutes}:${seconds}`;
+        }
+
+        // --- Setup and Drawing ---
+        
+        function resizeCanvas() {
+            const container = canvas.parentElement;
+            const panel = document.getElementById('cppPanel');
+
+            // Set main canvas width
+            canvas.width = container.clientWidth;
+            // Set main canvas height
+            const canvasHeight = Math.min(window.innerHeight * 0.5, 400);
+            canvas.height = canvasHeight;
+
+            // Set helper canvas width and height
+            helperCanvas.width = container.clientWidth;
+            helperCanvas.height = canvasHeight * 0.5; // Helper canvas is smaller
+            helperCanvas.style.backgroundColor = 'var(--panel-bg-color)';
+            helperCanvas.style.borderRadius = '0.5rem';
+
+            // Adjust code panel height to match main canvas
+            if (panel) {
+                // Total height = main canvas + helper canvas + margin
+                const totalCanvasHeight = canvas.height + helperCanvas.height + 16;
+                panel.style.height = `${totalCanvasHeight}px`;
+            }
+        }
+
+        function setup() {
+            resizeCanvas(); 
+            arraySize = parseInt(arraySizeSlider.value);
+            animationSpeed = parseInt(animationSpeedSlider.value);
+            
+            isAnimating = false;
+            currentStep = 0;
+            comparisonCount = 0;
+            steps = [];
+            array = [];
+            
+            for (let i = 0; i < arraySize; i++) {
+                array.push(Math.floor(Math.random() * maxArrayValue) + 1);
+            }
+
+            // Initialize visualization state
+            visState = {
+                array: [...array],
+                helperArray: new Array(arraySize).fill(null),
+                leftRange: [-1, -1],
+                rightRange: [-1, -1],
+                compare: [-1, -1],
+                sortedRange: [-1, -1]
+            };
+            
+            updateStats();
+            currentActionText.textContent = 'Press Start to begin.';
+            resetTimer();
+            displayMergeSortCode(arraySize);
+            draw();
+        }
+
+        function draw() {
+            drawMainArray();
+            drawHelperArray();
+        }
+
+        function drawMainArray() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            const barWidth = canvas.width / arraySize;
+            const maxBarHeight = canvas.height * 0.9;
+
+            for (let i = 0; i < visState.array.length; i++) {
+                const barHeight = (visState.array[i] / maxArrayValue) * maxBarHeight;
+                const x = i * barWidth;
+                const y = canvas.height - barHeight;
+                
+                // Determine bar color
+                if (visState.sortedRange[0] !== -1 && i >= visState.sortedRange[0] && i <= visState.sortedRange[1]) {
+                    ctx.fillStyle = COLORS.SORTED;
+                } else if (visState.leftRange[0] !== -1 && i >= visState.leftRange[0] && i <= visState.leftRange[1]) {
+                    ctx.fillStyle = COLORS.LEFT;
+                } else if (visState.rightRange[0] !== -1 && i >= visState.rightRange[0] && i <= visState.rightRange[1]) {
+                    ctx.fillStyle = COLORS.RIGHT;
+                } else {
+                    ctx.fillStyle = COLORS.BAR;
+                }
+
+                ctx.fillRect(x, y, barWidth - 1, barHeight);
+            }
+        }
+
+        function drawHelperArray() {
+            helperCtx.clearRect(0, 0, helperCanvas.width, helperCanvas.height);
+            const barWidth = helperCanvas.width / arraySize;
+            const maxBarHeight = helperCanvas.height * 0.8;
+            
+            helperCtx.font = "12px Inter";
+            helperCtx.textAlign = "center";
+
+            for (let i = 0; i < visState.helperArray.length; i++) {
+                const val = visState.helperArray[i];
+                if (val === null) continue;
+
+                const barHeight = (val / maxArrayValue) * maxBarHeight;
+                const x = i * barWidth;
+                const y = helperCanvas.height - barHeight;
+                
+                // Determine bar color
+                if (i === visState.compare[0] || i === visState.compare[1]) {
+                    helperCtx.fillStyle = COLORS.COMPARE;
+                } else if (visState.leftRange[0] !== -1 && i >= visState.leftRange[0] && i <= visState.leftRange[1]) {
+                    helperCtx.fillStyle = COLORS.LEFT;
+                } else if (visState.rightRange[0] !== -1 && i >= visState.rightRange[0] && i <= visState.rightRange[1]) {
+                    helperCtx.fillStyle = COLORS.RIGHT;
+                } else {
+                    helperCtx.fillStyle = COLORS.BAR;
+                }
+
+                helperCtx.fillRect(x, y, barWidth - 1, barHeight);
+                
+                // Draw value on top
+                helperCtx.fillStyle = 'var(--text-primary)';
+                helperCtx.fillText(val, x + (barWidth - 1) / 2, y - 5);
+            }
+        }
+
+
+        // --- Code Highlighting Functions ---
+
+        function syntaxHighlight(text) {
+            let safeText = text.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            return safeText
+                .replace(/(\/\/.*)/g, '<span class="cpp-comment">$1</span>')
+                .replace(/\b(void|int|if|else|while|for)\b/g, '<span class="cpp-keyword">$1</span>')
+                .replace(/(&lt;&lt;|>>|==|<=|>=|!=|\+\+|=|\+)/g, '<span class="cpp-operator">$1</span>')
+                .replace(/\b(mergeSort|merge)\b/g, '<span class="cpp-function">$1</span>')
+                .replace(/\b(arr|left|mid|right|n|i|j|k|leftSize|rightSize|L|R|temp)\b/g, '<span class="cpp-variable">$1</span>')
+                .replace(/(\b[0-9]+\b)/g, '<span class="cpp-number">$1</span>')
+                .replace(/\b(vector<int>)\b/g, '<span class="cpp-type">$1</span>');
+        }
+
+        function displayMergeSortCode(n) {
+            const code = [
+                { line: 1, text: '// Recursive mergeSort function' },
+                { line: 2, text: 'void mergeSort(int arr[], int left, int right) {', id: 'func-mergesort' },
+                { line: 3, text: '    if (left >= right) return;', id: 'base-case' },
+                { line: 4, text: '' },
+                { line: 5, text: '    int mid = left + (right - left) / 2;', id: 'calc-mid' },
+                { line: 6, text: '    mergeSort(arr, left, mid);', id: 'call-1' },
+                { line: 7, text: '    mergeSort(arr, mid + 1, right);', id: 'call-2' },
+                { line: 8, text: '    merge(arr, left, mid, right);', id: 'call-merge' },
+                { line: 9, text: '}' },
+                { line: 10, text: '' },
+                { line: 11, text: '// Merge function' },
+                { line: 12, text: 'void merge(int arr[], int left, int mid, int right) {', id: 'func-merge' },
+                { line: 13, text: '    // Create temp arrays' },
+                { line: 14, text: '    int leftSize = mid - left + 1;', id: 'copy-start' },
+                { line: 15, text: '    int rightSize = right - mid;' },
+                { line: 16, text: '    int L[leftSize], R[rightSize];' },
+                { line: 17, text: '    for(int i = 0; i < leftSize; i++) L[i] = arr[left + i];' , id: 'copy-left'},
+                { line: 18, text: '    for(let j = 0; j < rightSize; j++) R[j] = arr[mid + 1 + j];', id: 'copy-right' },
+                { line: 19, text: '' },
+                { line: 20, text: '    // Merge temp arrays back into arr[]' },
+                { line: 21, text: '    int i = 0, j = 0, k = left;', id: 'merge-init' },
+                { line: 22, text: '    while (i < leftSize && j < rightSize) {', id: 'merge-loop' },
+                { line: 23, text: '        if (L[i] <= R[j]) {', id: 'compare' },
+                { line: 24, text: '            arr[k] = L[i];', id: 'move-left' },
+                { line: 25, text: '            i++;' },
+                { line: 26, text: '        } else {' },
+                { line: 27, text: '            arr[k] = R[j];', id: 'move-right' },
+                { line: 28, text: '            j++;' },
+                { line: 29, text: '        }' },
+                { line: 30, text: '        k++;' },
+                { line: 31, text: '    }' },
+                { line: 32, text: '' },
+                { line: 33, text: '    // Copy remaining elements' },
+                { line: 34, text: '    while (i < leftSize) arr[k++] = L[i++];', id: 'copy-rem-left' },
+                { line: 35, text: '    while (j < rightSize) arr[k++] = R[j++];', id: 'copy-rem-right' },
+                { line: 36, text: '}', id: 'merge-end' },
+                { line: 37, text: '' },
+                { line: 38, text: 'int main() {' },
+                { line: 39, text: `    int arr[${n}];`, id: 'nLine' },
+                { line: 40, text: '    // ... (array initialized) ...' },
+                { line: 41, text: '    mergeSort(arr, 0, n - 1);' , id: 'call-main'},
+                { line: 42, text: '    return 0;' },
+                { line: 43, text: '}' }
+            ];
+
+            codeDisplayArea.innerHTML = code.map(line => 
+                `<span class="code-line" id="${line.id || ''}">${syntaxHighlight(line.text)}</span>`
+            ).join('');
+        }
+
+        function highlightCodeLine(id) {
+            document.querySelector('.code-line.highlight')?.classList.remove('highlight');
+            const lineEl = document.getElementById(id);
+            if (lineEl) {
+                lineEl.classList.add('highlight');
+                lineEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+        }
+
+        function resetCodeDisplay() {
+            displayMergeSortCode(arraySize);
+            const callLine = document.getElementById('call-main');
+            if (callLine) {
+                callLine.classList.add('highlight');
+            }
+        }
+
+        // --- Animation ---
+        
+        function startSort() {
+            if (isAnimating) return;
+            
+            isAnimating = true;
+            setButtonsState(false);
+            resetTimer();
+            startTimer();
+            
+            comparisonCount = 0;
+            currentStep = 0;
+            steps = [];
+            
+            // Generate all steps
+            let arrayCopy = [...array];
+            generateMergeSortSteps(arrayCopy, 0, arraySize - 1);
+            
+            // Final "sorted" step
+            steps.push({
+                type: 'done',
+                sortedRange: [0, arraySize - 1]
+            });
+
+            // Start animation loop
+            animateSort();
+        }
+
+        function animateSort() {
+            if (currentStep >= steps.length) {
+                isAnimating = false;
+                setButtonsState(true);
+                stopTimer();
+                currentActionText.textContent = 'Sorting Finished!';
+                highlightCodeLine('merge-end');
+                return;
+            }
+
+            let step = steps[currentStep];
+            processStep(step);
+            draw();
+            updateStats();
+            
+            currentStep++;
+            setTimeout(animateSort, animationSpeed);
+        }
+
+        // This function processes a step and updates the VISUAL state
+        function processStep(step) {
+            // Clear previous highlights
+            visState.compare = [-1, -1];
+
+            switch(step.type) {
+                case 'mergesort-call':
+                    visState.leftRange = [step.left, step.mid];
+                    visState.rightRange = [step.mid + 1, step.right];
+                    visState.sortedRange = [-1, -1];
+                    highlightCodeLine(step.highlight);
+                    currentActionText.textContent = `Splitting range [${step.left}..${step.right}]`;
+                    break;
+                
+                case 'base-case':
+                    visState.leftRange = [-1, -1];
+                    visState.rightRange = [-1, -1];
+                    visState.sortedRange = [step.left, step.right];
+                    highlightCodeLine('base-case');
+                    currentActionText.textContent = `Base case: range [${step.left}..${step.right}] is sorted.`;
+                    break;
+                
+                case 'merge-call':
+                    visState.leftRange = [step.left, step.mid];
+                    visState.rightRange = [step.mid + 1, step.right];
+                    visState.sortedRange = [-1, -1];
+                    highlightCodeLine('call-merge');
+                    currentActionText.textContent = `Merging ranges [${step.left}..${step.mid}] and [${step.mid+1}..${step.right}]`;
+                    break;
+
+                case 'copy-to-helper':
+                    visState.helperArray.fill(null);
+                    for(let i = step.left; i <= step.right; i++) {
+                        visState.helperArray[i] = visState.array[i];
+                    }
+                    highlightCodeLine('copy-left');
+                    currentActionText.textContent = `Copying to temporary array...`;
+                    break;
+                
+                case 'compare':
+                    // We compare indices from the helper array
+                    visState.compare = [step.i_helper, step.j_helper];
+                    comparisonCount++;
+                    highlightCodeLine('compare');
+                    currentActionText.textContent = `Comparing ${visState.helperArray[step.i_helper]} and ${visState.helperArray[step.j_helper]}`;
+                    break;
+                
+                case 'merge-move':
+                    visState.array[step.k_main] = step.value;
+                    // Mark this spot in helper as "used"
+                    visState.helperArray[step.from_helper] = null; 
+                    visState.sortedRange = [step.left, step.k_main];
+                    highlightCodeLine(step.highlight);
+                    currentActionText.textContent = `Moving ${step.value} to sorted position.`;
+                    break;
+                
+                case 'copy-remaining':
+                    visState.array[step.k_main] = step.value;
+                    visState.helperArray[step.from_helper] = null;
+                    visState.sortedRange = [step.left, step.k_main];
+                    highlightCodeLine(step.highlight);
+                    currentActionText.textContent = `Copying remaining element ${step.value}.`;
+                    break;
+
+                case 'merge-end':
+                    visState.leftRange = [-1, -1];
+            visState.rightRange = [-1, -1];
+                    visState.helperArray.fill(null);
+                    visState.sortedRange = [step.left, step.right];
+                    highlightCodeLine('merge-end');
+                    currentActionText.textContent = `Range [${step.left}..${step.right}] is now sorted.`;
+                    break;
+                
+                case 'done':
+                    visState.leftRange = [-1, -1];
+                    visState.rightRange = [-1, -1];
+                    visState.compare = [-1, -1];
+                    visState.helperArray.fill(null);
+                    visState.sortedRange = [0, arraySize - 1];
+                    break;
+            }
+        }
+
+
+        // --- Sort Logic (Generates Steps) ---
+        
+        function generateMergeSortSteps(arr, left, right) {
+            if (left >= right) {
+                steps.push({ type: 'base-case', left, right });
+                return;
+            }
+            
+            const mid = Math.floor(left + (right - left) / 2);
+            
+            steps.push({ type: 'mergesort-call', left, right, mid, highlight: 'calc-mid' });
+            
+            steps.push({ type: 'mergesort-call', left, right: mid, mid: -1, highlight: 'call-1' });
+            generateMergeSortSteps(arr, left, mid);
+            
+            steps.push({ type: 'mergesort-call', left: mid + 1, right, mid: -1, highlight: 'call-2' });
+            generateMergeSortSteps(arr, mid + 1, right);
+            
+            steps.push({ type: 'merge-call', left, mid, right });
+            generateMergeSteps(arr, left, mid, right);
+        }
+
+        function generateMergeSteps(arr, left, mid, right) {
+            steps.push({ type: 'copy-to-helper', left, right });
+            
+            let temp = [];
+            for(let i = left; i <= right; i++) {
+                temp[i] = arr[i];
+            }
+
+            let i = left;       // index for left subarray (in temp)
+            let j = mid + 1;    // index for right subarray (in temp)
+            let k = left;       // index for merged array (in main arr)
+
+            while (i <= mid && j <= right) {
+                steps.push({ type: 'compare', i_helper: i, j_helper: j });
+                if (temp[i] <= temp[j]) {
+                    steps.push({ 
+                        type: 'merge-move', 
+                        value: temp[i], 
+                        from_helper: i, 
+                        k_main: k,
+                        left: left,
+                        highlight: 'move-left'
+                    });
+                    arr[k] = temp[i];
+                    i++;
+                } else {
+                    steps.push({ 
+                        type: 'merge-move', 
+                        value: temp[j], 
+                        from_helper: j, 
+                        k_main: k,
+                        left: left,
+                        highlight: 'move-right'
+                    });
+                    arr[k] = temp[j];
+                    j++;
+                }
+                k++;
+            }
+
+            // Copy remaining elements of left subarray
+            while (i <= mid) {
+                steps.push({
+                    type: 'copy-remaining',
+                    value: temp[i],
+                    from_helper: i,
+                    k_main: k,
+                    left: left,
+                    highlight: 'copy-rem-left'
+                });
+                arr[k] = temp[i];
+                i++;
+                k++;
+            }
+
+            // Copy remaining elements of right subarray
+            while (j <= right) {
+                steps.push({
+                    type: 'copy-remaining',
+                    value: temp[j],
+                    from_helper: j,
+                    k_main: k,
+                    left: left,
+                    highlight: 'copy-rem-right'
+                });
+                arr[k] = temp[j];
+                j++;
+                k++;
+            }
+            
+            steps.push({ type: 'merge-end', left, right });
+        }
+
+        // --- Util ---
+        
+        function resetSimulation() {
+            if (isAnimating) {
+                // This is a soft-stop, but a hard stop would need clearing timeouts
+                isAnimating = false; 
+            }
+            setButtonsState(true);
+            setup();
+        }
+
+        function setButtonsState(enabled) {
+            startButton.disabled = !enabled;
+            resetButton.disabled = false; // Reset is always enabled
+            arraySizeSlider.disabled = !enabled;
+        }
+
+        function updateStats() {
+            comparisonCountDisplay.textContent = comparisonCount;
+        }
+
+        // --- Event Listeners ---
+        arraySizeSlider.addEventListener('input', (e) => {
+            if (isAnimating) return;
+            arraySizeValue.textContent = e.target.value;
+            resetSimulation();
+        });
+        
+        animationSpeedSlider.addEventListener('input', (e) => {
+            animationSpeed = parseInt(e.target.value);
+            animationSpeedValue.textContent = animationSpeed;
+        });
+
+        startButton.addEventListener('click', startSort);
+        resetButton.addEventListener('click', resetSimulation);
+        
+        window.addEventListener('resize', () => {
+            resizeCanvas();
+            draw();
+        });
+        
+        // --- Initial Load ---
+        document.addEventListener('DOMContentLoaded', setup);
+    </script>
+</body>
+</html>
+

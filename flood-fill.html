@@ -1,0 +1,722 @@
+
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flood Fill - Recursive Visualization</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        /* Dark Theme from your example */
+        :root {
+            --bg-color: #111827;
+            --panel-bg-color: #1f2937;
+            --text-primary: #f9fafb;
+            --text-secondary: #9ca3af;
+            --border-color: #374151;
+            --accent-color: #6366f1;
+            --accent-hover: #4f46e5;
+            --green-color: #22c55e;
+            --green-hover: #16a34a;
+            --red-color: #ef4444;
+            --red-hover: #dc2626;
+            --canvas-bg: #374151;
+            --shadow-color: rgba(0, 0, 0, 0.3);
+
+            --color-empty: #374151; /* canvas-bg */
+            --color-wall: #9ca3af;   /* text-secondary */
+            --color-check: #6366f1;  /* accent-color */
+            --color-fail: #ef4444;   /* red-color */
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+        }
+
+        .panel {
+            background-color: var(--panel-bg-color);
+            box-shadow: 0 4px 12px var(--shadow-color);
+            border-radius: 0.75rem;
+            border: 1px solid var(--border-color);
+        }
+
+        canvas {
+            background-color: var(--canvas-bg);
+            display: block;
+            margin: 0 auto;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            /* For sharp pixels */
+            image-rendering: -moz-crisp-edges;
+            image-rendering: -webkit-crisp-edges;
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+        }
+        
+        .btn {
+            transition: all 0.2s ease-in-out;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            padding: 0.75rem 1rem;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 2px 8px var(--shadow-color);
+        }
+
+        .btn-primary { background-color: var(--accent-color); }
+        .btn-primary:hover { background-color: var(--accent-hover); }
+        .btn-secondary { background-color: var(--green-color); }
+        .btn-secondary:hover { background-color: var(--green-hover); }
+        .btn-tertiary { background-color: var(--red-color); }
+        .btn-tertiary:hover { background-color: var(--red-hover); }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        input[type="range"] {
+            -webkit-appearance: none;
+            appearance: none;
+            background: transparent;
+            cursor: pointer;
+            width: 100%;
+        }
+        input[type="range"]::-webkit-slider-runnable-track {
+            background: var(--border-color);
+            height: 0.5rem;
+            border-radius: 0.25rem;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            margin-top: -4px;
+            background-color: var(--accent-color);
+            height: 1.25rem;
+            width: 1.25rem;
+            border-radius: 50%;
+        }
+
+        /* Color picker styles */
+        input[type="color"] {
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            width: 100%;
+            height: 40px;
+            background-color: transparent;
+            border: none;
+            cursor: pointer;
+            border: 2px solid var(--border-color);
+            border-radius: 0.5rem;
+        }
+        input[type="color"]::-webkit-color-swatch-wrapper {
+            padding: 0;
+        }
+        input[type="color"]::-webkit-color-swatch {
+            border: none;
+            border-radius: 0.375rem;
+        }
+
+        /* --- START: Code Highlighting Styles --- */
+        #codeDisplayContainer {
+            overflow-y: auto;
+            background-color: #0d1117;
+            border: 1px solid var(--border-color);
+            font-family: 'Fira Code', 'Consolas', 'Monaco', monospace;
+        }
+
+        #codeDisplayContainer pre, #codeDisplayContainer code {
+            height: 100%;
+        }
+
+        .code-line {
+            padding: 0.15rem 0.75rem;
+            display: block;
+            border-radius: 2px;
+            transition: background-color 0.1s ease-in-out;
+            white-space: pre-wrap;
+            min-height: 1.35rem;
+            line-height: 1.4;
+        }
+
+        .code-line.highlight {
+            background-color: #374151;
+            color: var(--text-primary);
+        }
+
+        /* Syntax Highlighting */
+        .code-keyword { color: #f97583; } /* void, if, return, int */
+        .code-type { color: #79c0ff; } /* vector, std */
+        .code-function { color: #d2a8ff; } /* floodFill */
+        .code-comment { color: #8b949e; } /* // ... */
+        .code-string { color: #a5d6ff; }
+        .code-number { color: #79c0ff; } /* 0, 1 */
+        .code-variable { color: #ffa657; } /* x, y, target, ... */
+        .code-operator { color: #f97583; } /* <, >=, !=, &&, || */
+        .code-array { color: #79c0ff; } /* grid */
+        .code-property { color: #a5d6ff; } /* [y][x] */
+        /* --- END: Code Highlighting Styles --- */
+    </style>
+</head>
+<body class="flex flex-col items-center min-h-screen p-4 sm:p-6">
+
+    <header class="w-full max-w-6xl mx-auto flex justify-center items-center mb-6">
+        <h1 class="text-3xl sm:text-4xl font-bold">Flood Fill Algorithm</h1>
+    </header>
+
+    <div class="w-full max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        <div class="lg:col-span-2">
+            <canvas id="floodCanvas"></canvas>
+        </div>
+
+        <div id="codePanel" class="panel w-full p-6 flex flex-col">
+            <h3 class="text-xl font-semibold mb-2 flex-shrink-0">C++ Code</h3>
+            <div id="codeDisplayContainer" class="rounded-md flex-grow min-h-0">
+                <pre class="text-sm"><code id="codeDisplayArea" class="language-cpp"></code></pre>
+            </div>
+        </div>
+    </div>
+
+    <div class="w-full max-w-6xl mx-auto panel p-6 mt-6">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            
+            <div>
+                <h2 class="text-2xl font-semibold mb-4">Controls</h2>
+                <div class="space-y-4">
+                    <div>
+                        <label for="gridSizeSlider" class="block text-sm font-medium text-secondary mb-2">Grid Size: <span id="gridSizeValue" class="font-bold text-accent-color text-lg">20x20</span></label>
+                        <input type="range" id="gridSizeSlider" min="10" max="50" value="20" class="w-full">
+                    </div>
+                    <div>
+                        <label for="speedSlider" class="block text-sm font-medium text-secondary mb-2">Speed: <span id="speedValue" class="font-bold text-accent-color text-lg">100</span>ms</label>
+                        <input type="range" id="speedSlider" min="10" max="500" value="100" step="10" class="w-full">
+                    </div>
+                     <div>
+                         <label for="colorPicker" class="block text-sm font-medium text-secondary mb-2">Fill Color</label>
+                         <input type="color" id="colorPicker" value="#6366f1">
+                    </div>
+                    <div class="flex flex-col gap-3 pt-2">
+                        <button id="modeButton" class="btn btn-secondary text-white">Mode: Fill (Click to Draw)</button>
+                        <button id="resetButton" class="btn btn-tertiary text-white">Reset Grid</button>
+                    </div>
+                </div>
+            </div>
+
+            <div>
+                <h3 class="text-xl font-semibold mb-3">Current Action</h3>
+                <p id="currentActionText" class="text-left bg-bg-color p-3 rounded-md min-h-[120px] text-secondary text-sm leading-relaxed">
+                    Select a mode. In 'Fill' mode, click a pixel to start. In 'Draw' mode, click and drag to draw walls.
+                </p>
+            </div>
+
+            <div>
+                <h3 class="text-xl font-semibold mb-3">Statistics</h3>
+                <div class="space-y-2 text-secondary">
+                    <div class="flex justify-between items-center"><span>Pixels Filled:</span><span id="pixelCount" class="font-bold text-lg text-primary">0</span></div>
+                    <div class="flex justify-between items-center"><span>Time:</span><span id="timer" class="font-bold text-lg text-primary">00:00</span></div>
+                     <div class="flex justify-between items-center"><span>Call Stack Depth:</span><span id="queueSize" class="font-bold text-lg text-primary">0</span></div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+
+    <script>
+        // --- UI Elements ---
+        const canvas = document.getElementById('floodCanvas');
+        const ctx = canvas.getContext('2d');
+        const codePanel = document.getElementById('codePanel');
+        const codeDisplayArea = document.getElementById('codeDisplayArea');
+
+        // Controls
+        const gridSizeSlider = document.getElementById('gridSizeSlider');
+        const gridSizeValue = document.getElementById('gridSizeValue');
+        const speedSlider = document.getElementById('speedSlider');
+        const speedValue = document.getElementById('speedValue');
+        const colorPicker = document.getElementById('colorPicker');
+        const modeButton = document.getElementById('modeButton');
+        const resetButton = document.getElementById('resetButton');
+
+        // Status & Stats
+        const currentActionText = document.getElementById('currentActionText');
+        const pixelCountDisplay = document.getElementById('pixelCount');
+        const timerDisplay = document.getElementById('timer');
+        const queueSizeDisplay = document.getElementById('queueSize');
+
+        // --- Colors ---
+        const COLORS = {
+            empty: 'var(--color-empty)',
+            wall: 'var(--color-wall)',
+            check: 'var(--color-check)',
+            fail: 'var(--color-fail)'
+        };
+
+        // --- Grid & State ---
+        let gridSize = 20;
+        let cellSize = 0;
+        let grid = [];
+        let fillColor = '#6366f1';
+        let targetColor = COLORS.empty;
+
+        // --- Animation State ---
+        let animationSpeed = 100;
+        let isAnimating = false;
+        let animationQueue = [];
+        let visited = new Set();
+        let animationInterval = null;
+        let callStackDepth = 0; // For tracking recursion depth
+
+        // --- Mode & Drawing State ---
+        let mode = 'fill'; // 'fill' or 'draw'
+        let isDrawing = false;
+
+        // --- Timer State ---
+        let timerInterval;
+        let startTime;
+        let pixelCount = 0;
+
+        // --- Timer Logic ---
+        function startTimer() {
+            if (timerInterval) clearInterval(timerInterval);
+            startTime = Date.now();
+            pixelCount = 0;
+            pixelCountDisplay.textContent = '0';
+            timerInterval = setInterval(updateTimerDisplay, 1000);
+        }
+
+        function stopTimer() {
+            clearInterval(timerInterval);
+        }
+
+        function resetTimer() {
+            stopTimer();
+            timerDisplay.textContent = '00:00';
+            pixelCount = 0;
+            pixelCountDisplay.textContent = '0';
+        }
+
+        function updateTimerDisplay() {
+            const elapsedSeconds = Math.floor((Date.now() - startTime) / 1000);
+            const minutes = Math.floor(elapsedSeconds / 60).toString().padStart(2, '0');
+            const seconds = (elapsedSeconds % 60).toString().padStart(2, '0');
+            timerDisplay.textContent = `${minutes}:${seconds}`;
+        }
+
+        // --- Setup and Drawing ---
+        
+        function resizeCanvas() {
+            const container = canvas.parentElement;
+            // Make canvas square
+            const size = Math.min(container.clientWidth, window.innerHeight * 0.7, 500);
+            canvas.width = size;
+            canvas.height = size;
+            
+            // Match code panel height to canvas height
+            if (codePanel) {
+                codePanel.style.height = `${size}px`;
+            }
+
+            cellSize = canvas.width / gridSize;
+        }
+
+        // Creates the 2D grid array
+        function initGrid() {
+            grid = [];
+            for (let y = 0; y < gridSize; y++) {
+                const row = [];
+                for (let x = 0; x < gridSize; x++) {
+                    row.push(getComputedStyle(document.documentElement).getPropertyValue('--color-empty').trim());
+                }
+                grid.push(row);
+            }
+        }
+
+        // Draws a default shape
+        function drawInitialShape() {
+            const wallColor = getComputedStyle(document.documentElement).getPropertyValue('--color-wall').trim();
+            const start = Math.floor(gridSize * 0.2);
+            const end = Math.floor(gridSize * 0.8);
+            
+            for (let i = start; i <= end; i++) {
+                grid[start][i] = wallColor; // Top
+                grid[end][i] = wallColor;   // Bottom
+                grid[i][start] = wallColor; // Left
+                grid[i][end] = wallColor;   // Right
+            }
+
+            // Add a small break
+            if (gridSize > 10) {
+                 grid[Math.floor(gridSize / 2)][end] = getComputedStyle(document.documentElement).getPropertyValue('--color-empty').trim();
+            }
+        }
+
+        // Full reset of the simulation
+        function resetSimulation() {
+            if (animationInterval) clearInterval(animationInterval);
+            isAnimating = false;
+            animationQueue = [];
+            visited.clear();
+            setButtonsState(true);
+            resetTimer();
+            callStackDepth = 0;
+            queueSizeDisplay.textContent = '0';
+            
+            initGrid();
+            drawInitialShape();
+            drawGrid();
+            
+            currentActionText.textContent = `Grid reset. Mode is '${mode}'. Click to ${mode}.`;
+            displayCode(); // Redraw code
+        }
+
+        // Main draw function for the grid
+        function drawGrid() {
+            ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--canvas-bg').trim();
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            for (let y = 0; y < gridSize; y++) {
+                for (let x = 0; x < gridSize; x++) {
+                    ctx.fillStyle = grid[y][x];
+                    ctx.fillRect(x * cellSize, y * cellSize, cellSize, cellSize);
+                }
+            }
+        }
+
+        // Draws a temporary highlight box for 'check' or 'fail'
+        function drawHighlight(x, y, type) {
+            ctx.strokeStyle = (type === 'check') ? COLORS.check : COLORS.fail;
+            ctx.lineWidth = 2;
+            ctx.strokeRect(x * cellSize + 1, y * cellSize + 1, cellSize - 2, cellSize - 2);
+        }
+
+        // Helper to get grid coordinates from a mouse event
+        function getGridCoords(event) {
+            const rect = canvas.getBoundingClientRect();
+            const x = event.clientX - rect.left;
+            const y = event.clientY - rect.top;
+            
+            const gridX = Math.floor(x / cellSize);
+            const gridY = Math.floor(y / cellSize);
+            
+            return { x: gridX, y: gridY };
+        }
+
+        // --- Code Highlighting Functions ---
+
+        // *** MODIFICATION HERE: C++ Syntax Highlighter ***
+        function syntaxHighlight(text) {
+            let safeText = text.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            return safeText
+                .replace(/(\/\/.*)/g, '<span class="code-comment">$1</span>') // Comments
+                .replace(/(#include &lt;.*?&gt;)/g, '<span class="code-comment">$1</span>') // Includes
+                .replace(/\b(void|int|return|if|for|using|namespace)\b/g, '<span class="code-keyword">$1</span>') // Keywords
+                .replace(/\b(floodFill)\b/g, '<span class="code-function">$1</span>') // Functions
+                .replace(/\b(vector|std|iostream)\b/g, '<span class="code-type">$1</span>') // Types
+                .replace(/\b(x|y|target|fill|N|dx|dy|i)\b/g, '<span class="code-variable">$1</span>') // Variables
+                .replace(/(\bgrid\b)/g, '<span class="code-array">$1</span>') // Grid array
+                .replace(/(\[y\]\[x\]|\[i\])/g, '<span class="code-property">$1</span>') // Array access
+                .replace(/(&lt;|&gt;|>=|<=|!=|==|&&|\|\||\+)/g, '<span class="code-operator">$1</span>') // Operators
+                .replace(/(\b[0-9]+\b)/g, '<span class="code-number">$1</span>'); // Numbers
+        }
+
+        // *** MODIFICATION HERE: C++ Code Display ***
+        function displayCode() {
+            const code = [
+                { line: 1, text: '#include <iostream>' },
+                { line: 2, text: '#include <vector>' },
+                { line: 3, text: 'using namespace std;' },
+                { line: 4, text: '' },
+                { line: 5, text: '// Dimensions of the grid' },
+                { line: 6, text: 'int N = 8;' },
+                { line: 7, text: '' },
+                { line: 8, text: '// Directions: Right, Left, Down, Up' },
+                { line: 9, text: 'int dx[] = {1, -1, 0, 0};' },
+                { line: 10, text: 'int dy[] = {0, 0, 1, -1};' },
+                { line: 11, text: '' },
+                { line: 12, text: '// Recursive Flood Fill function' },
+                { line: 13, text: 'void floodFill(vector<vector<int>>& grid, int x, int y, int target, int fill) {' },
+                { line: 14, text: '    // 1. Base Case: Out of bounds' },
+                { line: 15, text: '    if (x < 0 || x >= N || y < 0 || y >= N)' },
+                { line: 16, text: '        return;' },
+                { line: 17, text: '' },
+                { line: 18, text: '    // 2. Base Case: Wrong color' },
+                { line: 19, text: '    if (grid[y][x] != target)' },
+                { line: 20, text: '        return;' },
+                { line: 21, text: '' },
+                { line: 22, text: '    // 3. Action: Fill the pixel' },
+                { line: 23, text: '    grid[y][x] = fill;' },
+                { line: 24, text: '' },
+                { line: 25, text: '    // 4. Recursive Calls (Right, Left, Down, Up)' },
+                { line: 26, text: '    for (int i = 0; i < 4; i++) {' },
+                { line: 27, text: '        floodFill(grid, x + dx[i], y + dy[i], target, fill);' },
+                { line: 28, text: '    }' },
+                { line: 29, text: '}' }
+            ];
+
+            codeDisplayArea.innerHTML = code.map(line => 
+                `<span class="code-line" id="line-${line.line}">${syntaxHighlight(line.text)}</span>`
+            ).join('');
+        }
+
+        function highlightLine(lineNumber) {
+            document.querySelector('.code-line.highlight')?.classList.remove('highlight');
+            const lineEl = document.getElementById(`line-${lineNumber}`);
+            if (lineEl) {
+                lineEl.classList.add('highlight');
+                // Scroll to the highlighted line
+                lineEl.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+            }
+        }
+
+        // --- Animation & Algorithm Logic ---
+
+        function handleCanvasClick(event) {
+            if (isAnimating) return;
+            
+            const { x, y } = getGridCoords(event);
+            if (x < 0 || x >= gridSize || y < 0 || y >= gridSize) return;
+
+            if (mode === 'fill') {
+                targetColor = grid[y][x];
+                
+                if (targetColor === fillColor) {
+                    currentActionText.textContent = "This area is already the fill color.";
+                    return;
+                }
+                if (targetColor === getComputedStyle(document.documentElement).getPropertyValue('--color-wall').trim()) {
+                     currentActionText.textContent = "Cannot fill a wall.";
+                    return;
+                }
+
+                // Start the simulation
+                isAnimating = true;
+                setButtonsState(false);
+                visited.clear();
+                animationQueue = [];
+                callStackDepth = 0; // Reset call stack
+                startTimer();
+
+                // This function populates the animationQueue
+                recursiveFloodFill(x, y, targetColor, fillColor);
+                
+                currentActionText.textContent = `Starting fill at (${x}, ${y})...`;
+                startAnimation();
+            }
+        }
+
+        // *** MODIFICATION HERE: Animation logic re-mapped to C++ line numbers ***
+        // This function builds the step-by-step animation queue
+        function recursiveFloodFill(x, y, target, fill) {
+            const key = `${x},${y}`;
+            callStackDepth++;
+            
+            // 1. Check bounds
+            animationQueue.push({ type: 'check', x, y, line: 15, depth: callStackDepth, msg: `Checking bounds for (${x}, ${y})...` });
+            if (x < 0 || x >= gridSize || y < 0 || y >= gridSize) {
+                animationQueue.push({ type: 'return', x, y, line: 16, depth: callStackDepth, msg: `Out of bounds. Returning.` });
+                callStackDepth--;
+                return;
+            }
+            
+            // This 'visited' is for the animation builder to prevent stack overflow
+            // The C++ code's "visited" check is implicit in the color check
+            if (visited.has(key)) {
+                callStackDepth--;
+                return;
+            }
+            
+            // 2. Check color
+            animationQueue.push({ type: 'check', x, y, line: 19, depth: callStackDepth, msg: `Checking color of (${x}, ${y})...` });
+            if (grid[y][x] !== target) {
+                animationQueue.push({ type: 'return', x, y, line: 20, depth: callStackDepth, msg: `Wrong color (or already filled). Returning.` });
+                callStackDepth--;
+                return;
+            }
+
+            // Mark visited *after* color check, just like the C++ logic
+            visited.add(key);
+            
+            // 3. Action: Fill
+            animationQueue.push({ type: 'fill', x, y, line: 23, depth: callStackDepth, msg: `Filling (${x}, ${y})!` });
+            
+            // 4. Recursive Calls (Simulating the loop)
+            const dx = [1, -1, 0, 0];
+            const dy = [0, 0, 1, -1];
+            const directions = ['RIGHT', 'LEFT', 'DOWN', 'UP'];
+
+            for (let i = 0; i < 4; i++) {
+                animationQueue.push({ type: 'call', line: 26, depth: callStackDepth, msg: `Looping neighbors... (i=${i})` });
+                animationQueue.push({ type: 'call', line: 27, depth: callStackDepth, msg: `Calling for ${directions[i]} (${x + dx[i]}, ${y + dy[i]})...` });
+                recursiveFloodFill(x + dx[i], y + dy[i], target, fill);
+            }
+            
+            animationQueue.push({ type: 'return-pop', line: 29, depth: callStackDepth, msg: `Finished calls for (${x}, ${y}). Popping stack.` });
+            callStackDepth--;
+        }
+        
+        // Starts processing the animation queue
+        function startAnimation() {
+            if (animationInterval) clearInterval(animationInterval);
+            animationInterval = setInterval(animateStep, animationSpeed);
+        }
+
+        // Processes one step from the queue
+        function animateStep() {
+            if (animationQueue.length === 0) {
+                clearInterval(animationInterval);
+                isAnimating = false;
+                setButtonsState(true);
+                stopTimer();
+                currentActionText.textContent = `Fill complete! ${pixelCount} pixels filled.`;
+                queueSizeDisplay.textContent = '0';
+                drawGrid(); // Final draw to clear any highlights
+                return;
+            }
+
+            const step = animationQueue.shift();
+            
+            // Update UI
+            highlightLine(step.line);
+            currentActionText.textContent = step.msg;
+            queueSizeDisplay.textContent = step.depth; // Update call stack depth
+
+            // Perform action
+            drawGrid(); // Redraw grid every step to clear old highlights
+            
+            switch (step.type) {
+                case 'check':
+                    drawHighlight(step.x, step.y, 'check');
+                    break;
+                case 'return':
+                    if(step.x !== undefined) drawHighlight(step.x, step.y, 'fail');
+                    break;
+                case 'fill':
+                    grid[step.y][step.x] = fillColor;
+                    pixelCount++;
+                    pixelCountDisplay.textContent = pixelCount;
+                    drawHighlight(step.x, step.y, 'check'); // Highlight the fill
+                    break;
+                // 'call', 'action', 'return-pop' just update text and code line
+            }
+        }
+
+        // --- UI & Event Listeners ---
+
+        function setButtonsState(enabled) {
+            resetButton.disabled = !enabled;
+            modeButton.disabled = !enabled;
+            gridSizeSlider.disabled = !enabled;
+            colorPicker.disabled = !enabled;
+        }
+
+        // Grid Size Slider
+        gridSizeSlider.addEventListener('input', (e) => {
+            if (isAnimating) return;
+            gridSize = parseInt(e.target.value);
+            gridSizeValue.textContent = `${gridSize}x${gridSize}`;
+            resizeCanvas();
+            resetSimulation();
+        });
+        
+        // Speed Slider
+        speedSlider.addEventListener('input', (e) => {
+            // Invert the slider so "max" (500) is "fast" (10ms)
+            // And "min" (10) is "slow" (500ms)
+            animationSpeed = 510 - parseInt(e.target.value);
+            speedValue.textContent = `${animationSpeed}ms`;
+            // If animating, update the interval
+            if (isAnimating) {
+                startAnimation();
+            }
+        });
+
+        // Color Picker
+        colorPicker.addEventListener('input', (e) => {
+            fillColor = e.target.value;
+        });
+
+        // Reset Button
+        resetButton.addEventListener('click', resetSimulation);
+
+        // Mode Button
+        modeButton.addEventListener('click', () => {
+            if (isAnimating) return;
+            if (mode === 'fill') {
+                mode = 'draw';
+                modeButton.textContent = 'Mode: Draw (Click to Fill)';
+                modeButton.classList.remove('btn-secondary');
+                modeButton.classList.add('btn-primary');
+                currentActionText.textContent = "Draw mode: Click and drag to draw walls.";
+                canvas.style.cursor = 'crosshair';
+            } else {
+                mode = 'fill';
+                modeButton.textContent = 'Mode: Fill (Click to Draw)';
+                modeButton.classList.remove('btn-primary');
+                modeButton.classList.add('btn-secondary');
+                currentActionText.textContent = "Fill mode: Click an empty area to fill.";
+                canvas.style.cursor = 'pointer';
+            }
+        });
+
+        // --- Canvas Mouse Events for Drawing ---
+        
+        canvas.addEventListener('click', handleCanvasClick);
+
+        canvas.addEventListener('mousedown', (e) => {
+            if (isAnimating || mode !== 'draw') return;
+            isDrawing = true;
+            const { x, y } = getGridCoords(e);
+            if (x < 0 || x >= gridSize || y < 0 || y >= gridSize) return;
+            grid[y][x] = getComputedStyle(document.documentElement).getPropertyValue('--color-wall').trim();
+            drawGrid();
+        });
+
+        canvas.addEventListener('mousemove', (e) => {
+            if (isAnimating || mode !== 'draw' || !isDrawing) return;
+            const { x, y } = getGridCoords(e);
+            if (x < 0 || x >= gridSize || y < 0 || y >= gridSize) return;
+            grid[y][x] = getComputedStyle(document.documentElement).getPropertyValue('--color-wall').trim();
+            drawGrid();
+        });
+
+        canvas.addEventListener('mouseup', () => {
+            isDrawing = false;
+        });
+
+        canvas.addEventListener('mouseleave', () => {
+            isDrawing = false;
+        });
+        
+        // Window Resize
+        window.addEventListener('resize', () => {
+            resizeCanvas();
+            drawGrid();
+        });
+        
+        // --- Initial Load ---
+        document.addEventListener('DOMContentLoaded', () => {
+            // Set initial colors from CSS variables
+            fillColor = getComputedStyle(document.documentElement).getPropertyValue('--accent-color').trim();
+            colorPicker.value = fillColor;
+            
+            // Set initial speed value
+            // We set the slider value to match the inverted animationSpeed
+            speedSlider.value = 510 - animationSpeed;
+            speedValue.textContent = `${animationSpeed}ms`;
+
+            resizeCanvas();
+            resetSimulation();
+        });
+    </script>
+</body>
+</html>

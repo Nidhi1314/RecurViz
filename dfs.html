@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Depth-First Search - Simulation</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #111827;
+            --panel-bg-color: #1f2937;
+            --text-primary: #f9fafb;
+            --text-secondary: #9ca3af;
+            --border-color: #374151;
+            --accent-color: #6366f1;
+            --accent-hover: #4f46e5;
+            --green-color: #22c55e;
+            --green-hover: #16a34a;
+            --gray-color: #9ca3af;
+            --gray-hover: #d1d5db;
+            --shadow-color: rgba(0, 0, 0, 0.3);
+
+            /* DFS-specific colors */
+            --grid-bg: #0d1117;
+            --start-color: #16a34a; /* Darker Green */
+            --end-color: #dc2626; /* Red */
+            --wall-color: var(--panel-bg-color);
+            --visiting-color: #3b82f6;
+            --visiting-opacity: 0.5;
+            --path-color: #f59e0b; /* Amber */
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+        }
+
+        .panel {
+            background-color: var(--panel-bg-color);
+            box-shadow: 0 4px 12px var(--shadow-color);
+            border-radius: 0.75rem;
+            border: 1px solid var(--border-color);
+        }
+
+        /* --- START: Visualization Area --- */
+        #visualizationArea {
+            display: grid;
+            background-color: var(--grid-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 0.5rem;
+            overflow: hidden;
+            /* grid-template-columns is set by JS */
+        }
+
+        .grid-cell {
+            aspect-ratio: 1 / 1;
+            border-right: 1px solid var(--border-color);
+            border-bottom: 1px solid var(--border-color);
+            transition: background-color 0.1s ease, border-radius 0.1s ease;
+        }
+
+        /* Remove redundant borders */
+        .grid-cell:nth-child(var(--grid-size)n) {
+            border-right: none;
+        }
+        .grid-cell:nth-last-child(-n + var(--grid-size)) {
+            border-bottom: none;
+        }
+        
+        /* Cell States */
+        .grid-cell.start {
+            background-color: var(--start-color);
+            border-radius: 20%;
+        }
+        .grid-cell.end {
+            background-color: var(--end-color);
+            border-radius: 20%;
+        }
+        .grid-cell.wall {
+            background-color: var(--wall-color);
+            border-radius: 0;
+            transition: none; /* Walls appear instantly */
+        }
+        
+        .grid-cell.visiting {
+            background-color: var(--visiting-color);
+            opacity: var(--visiting-opacity);
+            border-radius: 50%;
+        }
+        
+        .grid-cell.path {
+            background-color: var(--path-color);
+            opacity: 1;
+            border-radius: 30%;
+        }
+        
+        /* Edit mode cursor */
+        .edit-mode {
+            cursor: crosshair;
+        }
+
+        /* --- END: Visualization Area --- */
+        
+        .btn {
+            transition: all 0.2s ease-in-out;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            padding: 0.75rem 1rem;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 2px 8px var(--shadow-color);
+        }
+
+        .btn-primary { background-color: var(--accent-color); }
+        .btn-primary:hover { background-color: var(--accent-hover); }
+        .btn-secondary { background-color: var(--green-color); }
+        .btn-secondary:hover { background-color: var(--green-hover); }
+        .btn-tertiary { color: #1f2937; background-color: var(--gray-color); }
+        .btn-tertiary:hover { background-color: var(--gray-hover); }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        input[type="range"] {
+            -webkit-appearance: none;
+            appearance: none;
+            background: transparent;
+            cursor: pointer;
+            width: 100%;
+        }
+        input[type="range"]::-webkit-slider-runnable-track {
+            background: var(--border-color);
+            height: 0.5rem;
+            border-radius: 0.25rem;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            margin-top: -4px;
+            background-color: var(--accent-color);
+            height: 1.25rem;
+            width: 1.25rem;
+            border-radius: 50%;
+        }
+
+        /* --- START: Code Highlighting Styles --- */
+        #codeDisplayContainer {
+            overflow-y: auto;
+            background-color: #0d1117;
+            border: 1px solid var(--border-color);
+            font-family: 'Consolas', 'Monaco', monospace;
+        }
+
+        #codeDisplayContainer pre, #codeDisplayContainer code {
+            height: 100%;
+        }
+
+        .code-line {
+            padding: 0.15rem 0.5rem;
+            display: block;
+            border-radius: 2px;
+            transition: background-color 0.2s ease-in-out;
+            white-space: pre-wrap;
+            min-height: 1.25rem;
+        }
+
+        .code-line.highlight {
+            background-color: #374151;
+            color: var(--text-primary);
+        }
+
+        /* Syntax Highlighting */
+        .cpp-keyword { color: #f97583; }
+        .cpp-function { color: #d2a8ff; }
+        .cpp-comment { color: #8b949e; }
+        .cpp-string { color: #a5d6ff; }
+        .cpp-number { color: #79c0ff; }
+        .cpp-variable { color: #ffa657; }
+        .cpp-operator { color: #f97583; }
+        .cpp-preprocessor { color: #8b949e; }
+        .cpp-type { color: #79c0ff; }
+        /* --- END: Code Highlighting Styles --- */
+    </style>
+</head>
+<body class="flex flex-col items-center min-h-screen p-4 sm:p-6">
+
+    <header class="w-full max-w-6xl mx-auto flex justify-center items-center mb-6">
+        <h1 class="text-3xl sm:text-4xl font-bold">Depth-First Search</h1>
+    </header>
+
+    <div class="w-full max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        <div class="lg:col-span-2">
+            <div id="visualizationArea"></div>
+        </div>
+
+        <div id="cppPanel" class="panel w-full p-6 flex flex-col">
+            <h3 class="text-xl font-semibold mb-2 flex-shrink-0">C++ Code (Recursive)</h3>
+            <div id="codeDisplayContainer" class="rounded-md flex-grow min-h-0">
+                <pre class="text-sm"><code id="codeDisplayArea" class="language-cpp"></code></pre>
+            </div>
+        </div>
+    </div>
+
+    <div class="w-full max-w-6xl mx-auto panel p-6 mt-6">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            
+            <div>
+                <h2 class="text-2xl font-semibold mb-4">Controls</h2>
+                <div class="space-y-4">
+                    <div>
+                        <label for="gridSizeSlider" class="block text-sm font-medium text-secondary mb-2">Grid Size: <span id="gridSizeValue" class="font-bold text-accent-color text-lg">20</span></label>
+                        <input type="range" id="gridSizeSlider" min="10" max="30" value="20">
+                    </div>
+                    <div class="flex flex-col gap-3 pt-2">
+                        <button id="startButton" class="btn btn-primary text-white">Start DFS</button>
+                        <button id="editButton" class="btn btn-secondary text-white">Edit Grid</button>
+                        <button id="clearBoardButton" class="btn btn-tertiary">Clear Board</button>
+                    </div>
+                </div>
+            </div>
+
+            <div>
+                <h3 class="text-xl font-semibold mb-3">Current Action</h3>
+                <p id="messageText" class="text-center bg-bg-color p-3 rounded-md min-h-[60px] flex items-center justify-center text-secondary">Click 'Edit Grid' to draw walls or 'Start DFS'.</p>
+            </div>
+
+            <div>
+                <h3 class="text-xl font-semibold mb-3">Statistics</h3>
+                <div class="space-y-2 text-secondary">
+                    <div class="flex justify-between items-center"><span>Nodes Visited:</span><span id="nodesVisited" class="font-bold text-lg text-primary">0</span></div>
+                    <div class="flex justify-between items-center"><span>Path Length:</span><span id="pathLength" class="font-bold text-lg text-primary">0</span></div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        // --- UI Elements ---
+        const visualizationArea = document.getElementById('visualizationArea');
+        const gridSizeSlider = document.getElementById('gridSizeSlider');
+        const gridSizeValue = document.getElementById('gridSizeValue');
+        const startButton = document.getElementById('startButton');
+        const editButton = document.getElementById('editButton');
+        const clearBoardButton = document.getElementById('clearBoardButton');
+        const messageText = document.getElementById('messageText');
+        const nodesVisitedDisplay = document.getElementById('nodesVisited');
+        const pathLengthDisplay = document.getElementById('pathLength');
+        const codeDisplayArea = document.getElementById('codeDisplayArea');
+
+        // --- Game State ---
+        let gridSize = 20;
+        let grid = []; // 2D array: 0=empty, 1=wall, 2=start, 3=end
+        let startNode = { y: 10, x: 2 };
+        let endNode = { y: 10, x: 17 };
+        
+        let isAnimating = false;
+        let gameMode = null; // 'edit'
+        let isDrawing = false;
+        let drawState = 'wall'; // 'wall' or 'empty'
+
+        let visitedSet; // Will be a Set of 'y,x' strings
+        let nodesVisited = 0;
+        let pathLength = 0;
+        let animationSpeed = 20; // in ms
+
+        // --- Constants for grid cell types ---
+        const EMPTY = 0, WALL = 1, START = 2, END = 3;
+
+        // --- Utility ---
+        const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+        const getCell = (y, x) => document.querySelector(`.grid-cell[data-y="${y}"][data-x="${x}"]`);
+
+        // --- Setup and Drawing ---
+        
+        function resizeVisualization() {
+            const vizHeight = visualizationArea.clientHeight;
+            const cppPanel = document.getElementById('cppPanel');
+            if (cppPanel) {
+                cppPanel.style.height = `${vizHeight}px`;
+            }
+        }
+
+        function setupGrid() {
+            grid = [];
+            for (let y = 0; y < gridSize; y++) {
+                const row = [];
+                for (let x = 0; x < gridSize; x++) {
+                    row.push(EMPTY);
+                }
+                grid.push(row);
+            }
+            // Place start and end
+            startNode = { y: Math.floor(gridSize / 2), x: Math.floor(gridSize * 0.2) };
+            endNode = { y: Math.floor(gridSize / 2), x: Math.floor(gridSize * 0.8) };
+            
+            grid[startNode.y][startNode.x] = START;
+            grid[endNode.y][endNode.x] = END;
+        }
+
+        function renderGrid() {
+            visualizationArea.innerHTML = '';
+            visualizationArea.style.gridTemplateColumns = `repeat(${gridSize}, 1fr)`;
+            visualizationArea.style.setProperty('--grid-size', gridSize);
+
+            for (let y = 0; y < gridSize; y++) {
+                for (let x = 0; x < gridSize; x++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'grid-cell';
+                    cell.dataset.y = y;
+                    cell.dataset.x = x;
+                    
+                    if (grid[y][x] === START) cell.classList.add('start');
+                    if (grid[y][x] === END) cell.classList.add('end');
+                    if (grid[y][x] === WALL) cell.classList.add('wall');
+                    
+                    visualizationArea.appendChild(cell);
+                }
+            }
+            resizeVisualization();
+        }
+
+        // --- Code Highlighting Functions ---
+
+        // --- (CORRECTED) syntaxHighlight Function ---
+        function syntaxHighlight(text) {
+            // 1. Escape HTML special characters first
+            let safeText = text.replace(/&/g, '&amp;')
+                               .replace(/</g, '&lt;')
+                               .replace(/>/g, '&gt;');
+            
+            // 2. Apply syntax highlighting using regex on the *escaped* text
+            return safeText
+                .replace(/(\/\/.*)/g, '<span class="cpp-comment">$1</span>')
+                .replace(/(".*?"|'.*?')/g, '<span class="cpp-string">$1</span>')
+                .replace(/\b(bool|int|void|if|return|else|const)\b/g, '<span class="cpp-keyword">$1</span>')
+                .replace(/\b(vector|pair|set)\b/g, '<span class="cpp-type">$1</span>')
+                .replace(/(#include|using|namespace|std)/g, '<span class="cpp-preprocessor">$1</span>')
+                .replace(/\b(dfs)\b/g, '<span class="cpp-function">$1</span>')
+                .replace(/\b(grid|y|x|H|W|path|visited|dy|dx|ny|nx|dir)\b/g, '<span class="cpp-variable">$1</span>')
+                // 3. (FIXED) Match escaped operators
+                .replace(/(&amp;&amp;|\|\||==|!=|&lt;=|&gt;=|!)/g, '<span class="cpp-operator">$1</span>')
+                .replace(/(\b[0-9]+\b)/g, '<span class="cpp-number">$1</span>');
+        }
+        // --- END (CORRECTED) Function ---
+
+
+        function displayCppCode() {
+            const code = [
+                { line: 1, text: '#include <vector>' },
+                { line: 2, text: '#include <set>' },
+                { line: 3, text: 'using namespace std;' },
+                { line: 4, text: '' },
+                { line: 5, text: 'bool dfs(vector<vector<int>>& grid, int y, int x, set<pair<int, int>>& visited, vector<pair<int, int>>& path) {' },
+                { line: 6, text: '    int H = grid.size();', id: 'getH' },
+                { line: 7, text: '    int W = grid[0].size();', id: 'getW' },
+                { line: 8, text: '' },
+                { line: 9, text: '    if (y < 0 || y >= H || x < 0 || x >= W) {', id: 'checkBounds' },
+                { line: 10, text: '        return false;', id: 'returnBounds' },
+                { line: 11, text: '    }' },
+                { line: 12, text: '' },
+                { line: 13, text: '    if (grid[y][x] == 1 || visited.count({y, x})) {', id: 'checkWallVisited' },
+                { line: 14, text: '        return false;', id: 'returnWallVisited' },
+                { line: 15, text: '    }' },
+                { line: 16, text: '' },
+                { line: 17, text: '    visited.insert({y, x});', id: 'markVisited' },
+                { line: 18, text: '    path.push_back({y, x});', id: 'pathPush' },
+                { line: 19, text: '' },
+                { line: 20, text: '    if (grid[y][x] == 3) {', id: 'checkFound' },
+                { line: 21, text: '        return true; // Found the end!', id: 'returnFound' },
+                { line: 22, text: '    }' },
+                { line: 23, text: '' },
+                { line: 24, text: '    int dy[] = {0, 0, 1, -1}; // 4 directions', id: 'initDirs' },
+                { line: 25, text: '    int dx[] = {1, -1, 0, 0};' },
+                { line: 26, text: '' },
+                { line: 27, text: '    for (int dir = 0; dir < 4; dir++) {', id: 'loopDirs' },
+                { line: 28, text: '        int ny = y + dy[dir];', id: 'calcNewY' },
+                { line: 29, text: '        int nx = x + dx[dir];', id: 'calcNewX' },
+                { line: 30, text: '        if (dfs(grid, ny, nx, visited, path)) {', id: 'recursiveCall' },
+                { line: 31, text: '            return true;', id: 'returnRecursive' },
+                { line: 32, text: '        }' },
+                { line: 33, text: '    }' },
+                { line: 4, text: '' },
+                { line: 35, text: '    path.pop_back(); // Backtrack', id: 'pathPop' },
+                { line: 36, text: '    return false;', id: 'returnBacktrack' },
+                { line: 37, text: '}' },
+            ];
+
+            codeDisplayArea.innerHTML = code.map(line => 
+                `<span class="code-line" id="${line.id || ''}">${syntaxHighlight(line.text)}</span>`
+            ).join('');
+        }
+
+        function highlightCodeLine(lineId) {
+            document.querySelectorAll('.code-line.highlight').forEach(el => el.classList.remove('highlight'));
+            const lineEl = document.getElementById(lineId);
+            if (lineEl) {
+                lineEl.classList.add('highlight');
+            }
+        }
+        
+        function resetCodeDisplay() {
+            displayCppCode();
+        }
+
+        // --- Animation (The Algorithm) ---
+        
+        async function startDFS() {
+            if (isAnimating) return;
+            
+            isAnimating = true;
+            gameMode = null;
+            setButtonsState(false);
+            clearPath(); // Clear previous run
+            
+            visitedSet = new Set();
+            nodesVisited = 0;
+            pathLength = 0;
+            updateStats();
+            
+            messageText.textContent = 'Starting Depth-First Search...';
+            
+            const path = [];
+            const pathFound = await runRecursiveDFS(startNode.y, startNode.x, path);
+            
+            if (pathFound) {
+                await drawPath(path);
+                messageText.textContent = `Path found! Length: ${path.length}`;
+            } else {
+                messageText.textContent = 'No path found to the end node.';
+            }
+            
+            isAnimating = false;
+            setButtonsState(true);
+        }
+
+        async function runRecursiveDFS(y, x, currentPath) {
+            if (isAnimating === false) return false; // Stop button was pressed
+
+            // --- Base Case: Out of Bounds ---
+            highlightCodeLine('checkBounds');
+            await sleep(animationSpeed);
+            if (y < 0 || y >= gridSize || x < 0 || x >= gridSize) {
+                highlightCodeLine('returnBounds');
+                return false;
+            }
+
+            const cell = getCell(y, x);
+            const cellType = grid[y][x];
+            const visitedKey = `${y},${x}`;
+            
+            // --- Base Case: Wall or Visited ---
+            highlightCodeLine('checkWallVisited');
+            await sleep(animationSpeed);
+            if (cellType === WALL || visitedSet.has(visitedKey)) {
+                highlightCodeLine('returnWallVisited');
+                return false;
+            }
+            
+            // --- Mark as Visited ---
+            visitedSet.add(visitedKey);
+            currentPath.push({ y, x });
+            nodesVisited++;
+            updateStats();
+            highlightCodeLine('markVisited');
+            if (cellType !== START && cellType !== END) {
+                cell.classList.add('visiting');
+            }
+            await sleep(animationSpeed);
+            highlightCodeLine('pathPush');
+            await sleep(animationSpeed);
+
+            // --- Base Case: Found End ---
+            highlightCodeLine('checkFound');
+            await sleep(animationSpeed);
+            if (cellType === END) {
+                highlightCodeLine('returnFound');
+                return true;
+            }
+            
+            // --- Recursive Calls (4 Directions) ---
+            highlightCodeLine('initDirs');
+            const directions = [[0, 1], [0, -1], [1, 0], [-1, 0]]; // R, L, D, U
+            
+            for (let i = 0; i < directions.length; i++) {
+                highlightCodeLine('loopDirs');
+                await sleep(animationSpeed / 2);
+                
+                const [dy, dx] = directions[i];
+                const ny = y + dy;
+                const nx = x + dx;
+                
+                highlightCodeLine(i % 2 === 0 ? 'calcNewY' : 'calcNewX');
+                await sleep(animationSpeed / 2);
+
+                highlightCodeLine('recursiveCall');
+                if (await runRecursiveDFS(ny, nx, currentPath)) {
+                    highlightCodeLine('returnRecursive');
+                    return true;
+                }
+            }
+
+            // --- Backtrack ---
+            currentPath.pop();
+            highlightCodeLine('pathPop');
+            if (cellType !== START) {
+                 cell.classList.remove('visiting');
+            }
+            await sleep(animationSpeed);
+            highlightCodeLine('returnBacktrack');
+            
+            return false;
+        }
+
+        async function drawPath(path) {
+            pathLength = path.length;
+            updateStats();
+            for (const node of path) {
+                const cellType = grid[node.y][node.x];
+                if (cellType !== START && cellType !== END) {
+                    const cell = getCell(node.y, node.x);
+                    cell.classList.remove('visiting');
+                    cell.classList.add('path');
+                    await sleep(animationSpeed);
+                }
+            }
+        }
+
+        // --- Game Logic & Controls ---
+        
+        function toggleEditMode() {
+            if (isAnimating) return;
+            
+            if (gameMode === 'edit') {
+                gameMode = null;
+                editButton.textContent = 'Edit Grid';
+                editButton.classList.replace('btn-secondary', 'btn-primary');
+                editButton.classList.replace('btn-primary', 'btn-secondary'); // Fix style toggle
+                visualizationArea.classList.remove('edit-mode');
+                messageText.textContent = 'Exited edit mode.';
+            } else {
+                gameMode = 'edit';
+                editButton.textContent = 'Stop Editing';
+                editButton.classList.replace('btn-secondary', 'btn-primary');
+                visualizationArea.classList.add('edit-mode');
+                messageText.textContent = 'Click and drag to draw/erase walls.';
+            }
+        }
+
+        function clearBoard() {
+            if (isAnimating) return;
+            setupGrid();
+            renderGrid();
+            clearPath();
+            messageText.textContent = 'Board cleared.';
+        }
+        
+        function clearPath() {
+            if (isAnimating) return; // Don't clear if animating
+            
+            document.querySelectorAll('.grid-cell.visiting, .grid-cell.path').forEach(cell => {
+                cell.classList.remove('visiting', 'path');
+            });
+            nodesVisited = 0;
+            pathLength = 0;
+            updateStats();
+            resetCodeDisplay();
+        }
+
+        function resetSimulation() {
+            isAnimating = false;
+            gameMode = null;
+            editButton.textContent = 'Edit Grid';
+            editButton.classList.replace('btn-primary', 'btn-secondary');
+            visualizationArea.classList.remove('edit-mode');
+            
+            setButtonsState(true);
+            setupGrid();
+            renderGrid();
+            clearPath();
+            messageText.textContent = "Grid reset. Click 'Edit Grid' or 'Start DFS'.";
+        }
+
+        function setButtonsState(enabled) {
+            startButton.disabled = !enabled;
+            editButton.disabled = !enabled;
+            clearBoardButton.disabled = !enabled;
+            gridSizeSlider.disabled = !enabled;
+        }
+
+        function updateStats() {
+            nodesVisitedDisplay.textContent = nodesVisited;
+            pathLengthDisplay.textContent = pathLength;
+        }
+        
+        // --- Wall Drawing Handlers ---
+        
+        function handleGridMouseDown(e) {
+            if (gameMode !== 'edit' || isAnimating) return;
+            
+            const cell = e.target.closest('.grid-cell');
+            if (!cell) return;
+            
+            const cellType = grid[cell.dataset.y][cell.dataset.x];
+            if (cellType === START || cellType === END) return;
+
+            isDrawing = true;
+            drawState = (cellType === WALL) ? 'empty' : 'wall'; // Toggle draw/erase
+            
+            // Apply first click
+            grid[cell.dataset.y][cell.dataset.x] = (drawState === 'wall') ? WALL : EMPTY;
+            cell.classList.toggle('wall', drawState === 'wall');
+        }
+        
+        function handleGridMouseMove(e) {
+            if (gameMode !== 'edit' || !isDrawing) return;
+            
+            const cell = e.target.closest('.grid-cell');
+            if (!cell) return;
+            
+            const cellType = grid[cell.dataset.y][cell.dataset.x];
+            if (cellType === START || cellType === END) return;
+            
+            grid[cell.dataset.y][cell.dataset.x] = (drawState === 'wall') ? WALL : EMPTY;
+            cell.classList.toggle('wall', drawState === 'wall');
+        }
+        
+        function handleGridMouseUp() {
+            isDrawing = false;
+        }
+
+
+        // --- Event Listeners ---
+        gridSizeSlider.addEventListener('input', (e) => {
+            gridSize = parseInt(e.target.value);
+            gridSizeValue.textContent = gridSize;
+            resetSimulation();
+        });
+
+        startButton.addEventListener('click', startDFS);
+        editButton.addEventListener('click', toggleEditMode);
+        clearBoardButton.addEventListener('click', clearBoard);
+        
+        visualizationArea.addEventListener('mousedown', handleGridMouseDown);
+        visualizationArea.addEventListener('mousemove', handleGridMouseMove);
+        document.addEventListener('mouseup', handleGridMouseUp); // Listen on document
+        visualizationArea.addEventListener('mouseleave', () => isDrawing = false);
+
+        window.addEventListener('resize', () => {
+            resizeVisualization();
+        });
+        
+        // --- Initial Load ---
+        document.addEventListener('DOMContentLoaded', () => {
+            resetSimulation();
+        });
+    </script>
+</body>
+</html>
