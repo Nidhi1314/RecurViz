@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>N-Queens Problem - Dark Simulation</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #111827;
+            --panel-bg-color: #1f2937;
+            --text-primary: #f9fafb;
+            --text-secondary: #9ca3af;
+            --border-color: #374151;
+            --accent-color: #6366f1;
+            --accent-hover: #4f46e5;
+            --green-color: #22c55e;
+            --green-hover: #16a34a;
+            --gray-color: #9ca3af;
+            --gray-hover: #d1d5db;
+            --canvas-bg: #374151;
+            --shadow-color: rgba(0, 0, 0, 0.3);
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+        }
+
+        .panel {
+            background-color: var(--panel-bg-color);
+            box-shadow: 0 4px 12px var(--shadow-color);
+            border-radius: 0.75rem;
+            border: 1px solid var(--border-color);
+        }
+
+        canvas {
+            background-color: var(--canvas-bg);
+            display: block;
+            margin: 0 auto;
+            border-radius: 0.5rem;
+        }
+        
+        .btn {
+            transition: all 0.2s ease-in-out;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            padding: 0.75rem 1rem;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 2px 8px var(--shadow-color);
+        }
+
+        .btn-primary { background-color: var(--accent-color); }
+        .btn-primary:hover { background-color: var(--accent-hover); }
+        .btn-secondary { background-color: var(--green-color); }
+        .btn-secondary:hover { background-color: var(--green-hover); }
+        .btn-tertiary { color: #1f2937; background-color: var(--gray-color); }
+        .btn-tertiary:hover { background-color: var(--gray-hover); }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        input[type="range"] {
+            -webkit-appearance: none;
+            appearance: none;
+            background: transparent;
+            cursor: pointer;
+            width: 100%;
+        }
+        input[type="range"]::-webkit-slider-runnable-track {
+            background: var(--border-color);
+            height: 0.5rem;
+            border-radius: 0.25rem;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            margin-top: -4px;
+            background-color: var(--accent-color);
+            height: 1.25rem;
+            width: 1.25rem;
+            border-radius: 50%;
+        }
+
+        .modal-backdrop {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+            z-index: 1000;
+        }
+        .modal-backdrop.visible {
+            opacity: 1;
+            visibility: visible;
+        }
+        .modal-content {
+            transform: scale(0.95);
+            transition: transform 0.3s ease;
+        }
+        .modal-backdrop.visible .modal-content {
+            transform: scale(1);
+        }
+
+        #codeDisplayContainer {
+            overflow-y: auto;
+            background-color: #0d1117;
+            border: 1px solid var(--border-color);
+            font-family: 'Consolas', 'Monaco', monospace;
+        }
+
+        .code-line {
+            padding: 0.15rem 0.5rem;
+            display: block;
+            border-radius: 2px;
+            transition: background-color 0.2s ease-in-out;
+            white-space: pre-wrap;
+            min-height: 1.25rem;
+        }
+
+        .code-line.highlight {
+            background-color: #374151;
+            color: var(--text-primary);
+        }
+
+        .cpp-keyword { color: #f97583; }
+        .cpp-function { color: #d2a8ff; }
+        .cpp-comment { color: #8b949e; }
+        .cpp-string { color: #a5d6ff; }
+        .cpp-number { color: #79c0ff; }
+        .cpp-variable { color: #ffa657; }
+        .cpp-operator { color: #f97583; }
+        .cpp-preprocessor { color: #8b949e; }
+    </style>
+</head>
+<body class="flex flex-col items-center min-h-screen p-4 sm:p-6">
+
+    <header class="w-full max-w-6xl mx-auto flex justify-center items-center mb-6">
+        <h1 class="text-3xl sm:text-4xl font-bold">N-Queens Problem</h1>
+    </header>
+
+    <div class="w-full max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        <div class="lg:col-span-2">
+            <canvas id="queensCanvas"></canvas>
+        </div>
+
+        <div id="cppPanel" class="panel w-full p-6 flex flex-col">
+            <h3 class="text-xl font-semibold mb-2 flex-shrink-0">C++ Code</h3>
+            <div id="codeDisplayContainer" class="rounded-md flex-grow min-h-0">
+                <pre class="text-sm"><code id="codeDisplayArea" class="language-cpp"></code></pre>
+            </div>
+        </div>
+    </div>
+
+    <div class="w-full max-w-6xl mx-auto panel p-6 mt-6">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            
+            <div>
+                <h2 class="text-2xl font-semibold mb-4">Controls</h2>
+                <div class="space-y-4">
+                    <div>
+                        <label for="boardSize" class="block text-sm font-medium text-secondary mb-2">Board Size: <span id="boardSizeValue" class="font-bold text-accent-color text-lg">8</span></label>
+                        <input type="range" id="boardSize" min="4" max="12" value="8">
+                    </div>
+                    <div>
+                        <label for="speedSlider" class="block text-sm font-medium text-secondary mb-2">Animation Speed: <span id="speedValue" class="font-bold text-accent-color text-lg">Normal</span></label>
+                        <input type="range" id="speedSlider" min="1" max="3" value="2">
+                    </div>
+                    <div class="flex flex-col gap-3 pt-2">
+                        <button id="startButton" class="btn btn-primary text-white">Start Solving</button>
+                        <button id="resetButton" class="btn btn-tertiary">Reset</button>
+                    </div>
+                </div>
+            </div>
+
+            <div>
+                <h3 class="text-xl font-semibold mb-3">Current Action</h3>
+                <p id="currentActionText" class="text-center bg-bg-color p-3 rounded-md min-h-[60px] flex items-center justify-center text-secondary">Click 'Start Solving' to begin.</p>
+            </div>
+
+            <div>
+                <h3 class="text-xl font-semibold mb-3">Statistics</h3>
+                <div class="space-y-2 text-secondary">
+                    <div class="flex justify-between items-center"><span>Solutions Found:</span><span id="solutionCount" class="font-bold text-lg text-primary">0</span></div>
+                    <div class="flex justify-between items-center"><span>Backtracks:</span><span id="backtrackCount" class="font-bold text-lg text-primary">0</span></div>
+                    <div class="flex justify-between items-center"><span>Current Row:</span><span id="currentRow" class="font-bold text-lg text-primary">-</span></div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <div id="solutionModal" class="modal-backdrop">
+        <div class="modal-content panel p-8 max-w-sm w-full text-center space-y-4">
+            <h2 class="text-3xl font-bold text-green-500">Solution Found!</h2>
+            <p class="text-secondary">Found a valid arrangement of queens.</p>
+            <div class="text-left space-y-2 pt-4 text-primary">
+                <div class="flex justify-between"><span>Total Solutions:</span><strong id="finalSolutionCount">0</strong></div>
+                <div class="flex justify-between"><span>Backtracks:</span><strong id="finalBacktrackCount">0</strong></div>
+            </div>
+            <button id="continueButton" class="btn btn-primary text-white w-full mt-4">Find Next Solution</button>
+            <button id="closeModalButton" class="btn btn-tertiary w-full">Close</button>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('queensCanvas');
+        const ctx = canvas.getContext('2d');
+        const boardSizeSlider = document.getElementById('boardSize');
+        const boardSizeValue = document.getElementById('boardSizeValue');
+        const speedSlider = document.getElementById('speedSlider');
+        const speedValue = document.getElementById('speedValue');
+        const startButton = document.getElementById('startButton');
+        const resetButton = document.getElementById('resetButton');
+        const solutionCountDisplay = document.getElementById('solutionCount');
+        const backtrackCountDisplay = document.getElementById('backtrackCount');
+        const currentRowDisplay = document.getElementById('currentRow');
+        const currentActionText = document.getElementById('currentActionText');
+        const codeDisplayArea = document.getElementById('codeDisplayArea');
+        
+        const solutionModal = document.getElementById('solutionModal');
+        const continueButton = document.getElementById('continueButton');
+        const closeModalButton = document.getElementById('closeModalButton');
+        const finalSolutionCount = document.getElementById('finalSolutionCount');
+        const finalBacktrackCount = document.getElementById('finalBacktrackCount');
+
+        let n = 8;
+        let board = [];
+        let solutionCount = 0;
+        let backtrackCount = 0;
+        let isAnimating = false;
+        let animationSpeed = 300;
+        let searchContinue = false;
+
+        const speedMap = { 1: { label: 'Slow', delay: 500 }, 2: { label: 'Normal', delay: 300 }, 3: { label: 'Fast', delay: 100 } };
+
+        function resizeCanvas() {
+            const container = canvas.parentElement;
+            canvas.width = container.clientWidth;
+            const canvasHeight = Math.min(window.innerHeight * 0.7, 500);
+            canvas.height = canvasHeight;
+            const cppPanel = document.getElementById('cppPanel');
+            if (cppPanel) cppPanel.style.height = `${canvasHeight}px`;
+        }
+
+        function setup() {
+            resizeCanvas();
+            solutionCount = 0;
+            backtrackCount = 0;
+            board = Array(n).fill(-1);
+            updateStats();
+            currentActionText.textContent = "Click 'Start Solving' to begin.";
+            resetCodeDisplay();
+            draw();
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawBoard();
+            drawQueens();
+        }
+
+        function drawBoard() {
+            const size = Math.min(canvas.width, canvas.height);
+            const cellSize = size / n;
+            const offsetX = (canvas.width - size) / 2;
+            const offsetY = (canvas.height - size) / 2;
+
+            for (let row = 0; row < n; row++) {
+                for (let col = 0; col < n; col++) {
+                    ctx.fillStyle = (row + col) % 2 === 0 ? '#4b5563' : '#6b7280';
+                    ctx.fillRect(offsetX + col * cellSize, offsetY + row * cellSize, cellSize, cellSize);
+                }
+            }
+        }
+
+        function drawQueens() {
+            const size = Math.min(canvas.width, canvas.height);
+            const cellSize = size / n;
+            const offsetX = (canvas.width - size) / 2;
+            const offsetY = (canvas.height - size) / 2;
+
+            for (let row = 0; row < n; row++) {
+                const col = board[row];
+                if (col !== -1) {
+                    const x = offsetX + col * cellSize + cellSize / 2;
+                    const y = offsetY + row * cellSize + cellSize / 2;
+                    const radius = cellSize * 0.35;
+
+                    ctx.fillStyle = '#fbbf24';
+                    ctx.beginPath();
+                    ctx.arc(x, y, radius, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    ctx.fillStyle = '#1f2937';
+                    ctx.font = `bold ${cellSize * 0.5}px Inter`;
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText('♛', x, y);
+                }
+            }
+        }
+
+        function syntaxHighlight(text) {
+            let safeText = text.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            return safeText
+                .replace(/(\/\/.*)/g, '<span class="cpp-comment">$1</span>')
+                .replace(/(".*?"|'.*?')/g, '<span class="cpp-string">$1</span>')
+                .replace(/\b(bool|void|int|if|return|else|for|cout|endl|std|using|namespace|include|true|false)\b/g, '<span class="cpp-keyword">$1</span>')
+                .replace(/(#include)/g, '<span class="cpp-preprocessor">$1</span>')
+                .replace(/\b(isSafe|solveNQueens|printSolution)\b/g, '<span class="cpp-function">$1</span>')
+                .replace(/\b(board|n|row|col|i|N)\b/g, '<span class="cpp-variable">$1</span>')
+                .replace(/(&lt;&lt;|>>|==|!=|\|\|)/g, '<span class="cpp-operator">$1</span>')
+                .replace(/(\b[0-9]+\b)/g, '<span class="cpp-number">$1</span>');
+        }
+
+        function displayCppCode(boardSize) {
+            const code = [
+                { line: 1, text: '#include <iostream>' },
+                { line: 2, text: 'using namespace std;' },
+                { line: 3, text: '' },
+                { line: 4, text: 'bool isSafe(int board[], int row, int col, int n) {', id: 'isSafeFunc' },
+                { line: 5, text: '    for (int i = 0; i < row; i++) {', id: 'checkLoop' },
+                { line: 6, text: '        if (board[i] == col || board[i] - i == col - row ||', id: 'checkLine1' },
+                { line: 7, text: '            board[i] + i == col + row) return false;', id: 'checkLine2' },
+                { line: 8, text: '    }' },
+                { line: 9, text: '    return true;', id: 'returnTrue' },
+                { line: 10, text: '}' },
+                { line: 11, text: '' },
+                { line: 12, text: 'bool solveNQueens(int board[], int row, int n) {', id: 'solveFunc' },
+                { line: 13, text: '    if (row == n) return true;', id: 'baseCase' },
+                { line: 14, text: '' },
+                { line: 15, text: '    for (int col = 0; col < n; col++) {', id: 'tryLoop' },
+                { line: 16, text: '        if (isSafe(board, row, col, n)) {', id: 'safeCheck' },
+                { line: 17, text: '            board[row] = col;', id: 'placeQueen' },
+                { line: 18, text: '            if (solveNQueens(board, row + 1, n)) return true;', id: 'recurse' },
+                { line: 19, text: '            board[row] = -1;  // Backtrack', id: 'backtrack' },
+                { line: 20, text: '        }' },
+                { line: 21, text: '    }' },
+                { line: 22, text: '    return false;', id: 'returnFalse' },
+                { line: 23, text: '}' },
+                { line: 24, text: '' },
+                { line: 25, text: 'int main() {' },
+                { line: 26, text: `    int N = ${boardSize};`, id: 'nLine' },
+                { line: 27, text: '    int board[N];', id: 'boardDecl' },
+                { line: 28, text: '    for (int i = 0; i < N; i++) board[i] = -1;', id: 'initBoard' },
+                { line: 29, text: '    if (solveNQueens(board, 0, N)) cout << "Solution found!";', id: 'callSolve' },
+                { line: 30, text: '    return 0;' },
+                { line: 31, text: '}' }
+            ];
+
+            codeDisplayArea.innerHTML = code.map(line => 
+                `<span class="code-line" id="${line.id || ''}">${syntaxHighlight(line.text)}</span>`
+            ).join('');
+        }
+
+        function highlightLine(lineId) {
+            document.querySelector('.code-line.highlight')?.classList.remove('highlight');
+            const lineEl = document.getElementById(lineId);
+            if (lineEl) lineEl.classList.add('highlight');
+        }
+
+        function resetCodeDisplay() {
+            displayCppCode(n);
+            highlightLine('callSolve');
+        }
+
+        function updateStats() {
+            solutionCountDisplay.textContent = solutionCount;
+            backtrackCountDisplay.textContent = backtrackCount;
+        }
+
+        function showSolutionModal() {
+            finalSolutionCount.textContent = solutionCount;
+            finalBacktrackCount.textContent = backtrackCount;
+            solutionModal.classList.add('visible');
+        }
+
+        function hideSolutionModal() {
+            solutionModal.classList.remove('visible');
+        }
+
+        function isSafe(row, col) {
+            for (let i = 0; i < row; i++) {
+                if (board[i] === col || board[i] - i === col - row || board[i] + i === col + row) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        async function solveNQueens(row) {
+            if (!searchContinue) return false;
+
+            if (row === n) {
+                solutionCount++;
+                updateStats();
+                currentActionText.innerHTML = `<span class="text-green-500">Solution ${solutionCount} found!</span>`;
+                highlightLine('baseCase');
+                draw();
+                await sleep(animationSpeed * 3);
+                showSolutionModal();
+                return true;
+            }
+
+            currentRowDisplay.textContent = row;
+            highlightLine('tryLoop');
+            await sleep(animationSpeed);
+
+            for (let col = 0; col < n; col++) {
+                if (!searchContinue) return false;
+
+                currentActionText.innerHTML = `Trying to place queen at row <strong>${row}</strong>, column <strong>${col}</strong>`;
+                highlightLine('safeCheck');
+                await sleep(animationSpeed);
+
+                if (isSafe(row, col)) {
+                    board[row] = col;
+                    highlightLine('placeQueen');
+                    draw();
+                    await sleep(animationSpeed);
+
+                    currentActionText.innerHTML = `Queen placed at row <strong>${row}</strong>, column <strong>${col}</strong>. Trying next row...`;
+                    highlightLine('recurse');
+                    await sleep(animationSpeed);
+
+                    if (await solveNQueens(row + 1)) {
+                        return true;
+                    }
+
+                    if (!searchContinue) return false;
+
+                    backtrackCount++;
+                    updateStats();
+                    board[row] = -1;
+                    currentActionText.innerHTML = `<span class="text-yellow-500">Backtracking from row ${row}, column ${col}</span>`;
+                    highlightLine('backtrack');
+                    draw();
+                    await sleep(animationSpeed);
+                } else {
+                    currentActionText.innerHTML = `Position (${row}, ${col}) is unsafe. Trying next column...`;
+                    await sleep(animationSpeed / 2);
+                }
+            }
+
+            highlightLine('returnFalse');
+            return false;
+        }
+
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        async function startSolving() {
+            if (isAnimating) return;
+            isAnimating = true;
+            searchContinue = true;
+            board = Array(n).fill(-1);
+            setButtonsState(false);
+            currentActionText.textContent = 'Starting to solve...';
+            resetCodeDisplay();
+            await sleep(500);
+            
+            const result = await solveNQueens(0);
+            
+            if (!result && searchContinue) {
+                currentActionText.innerHTML = '<span class="text-red-500">No solution exists for this board size.</span>';
+                isAnimating = false;
+                setButtonsState(true);
+            }
+        }
+
+        function resetSimulation() {
+            searchContinue = false;
+            isAnimating = false;
+            hideSolutionModal();
+            setButtonsState(true);
+            setup();
+        }
+
+        function setButtonsState(enabled) {
+            startButton.disabled = !enabled;
+            boardSizeSlider.disabled = !enabled;
+            speedSlider.disabled = !enabled;
+        }
+
+        boardSizeSlider.addEventListener('input', (e) => {
+            if (isAnimating) return;
+            n = parseInt(e.target.value);
+            boardSizeValue.textContent = n;
+            setup();
+        });
+
+        speedSlider.addEventListener('input', (e) => {
+            const speed = parseInt(e.target.value);
+            speedValue.textContent = speedMap[speed].label;
+            animationSpeed = speedMap[speed].delay;
+        });
+
+        startButton.addEventListener('click', startSolving);
+        resetButton.addEventListener('click', resetSimulation);
+        
+        continueButton.addEventListener('click', () => {
+            hideSolutionModal();
+            board[n - 1] = -1;
+            backtrackCount++;
+            updateStats();
+            currentActionText.textContent = 'Continuing search for next solution...';
+            draw();
+            setTimeout(() => solveNQueens(n - 1), animationSpeed);
+        });
+
+        closeModalButton.addEventListener('click', () => {
+            resetSimulation();
+        });
+
+        window.addEventListener('resize', () => {
+            resizeCanvas();
+            draw();
+        });
+
+        setup();
+    </script>
+</body>
+</html>

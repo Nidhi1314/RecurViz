@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Learn Recursion Visually</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        
+        .card {
+            background-color: #1f2937; /* gray-800 */
+            border: 1px solid #374151; /* gray-700 */
+            border-radius: 0.75rem; /* rounded-xl */
+            transition: all 0.2s ease-in-out;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+        }
+
+        .card:hover {
+            transform: translateY(-4px);
+            border-color: #6366f1; /* indigo-500 */
+            box-shadow: 0 10px 15px -3px rgba(99, 102, 241, 0.2), 0 4px 6px -4px rgba(99, 102, 241, 0.1);
+        }
+
+        .card-icon-bg {
+            background-color: #374151; /* gray-700 */
+            border-radius: 0.5rem; /* rounded-lg */
+            border: 1px solid #4b5563; /* gray-600 */
+        }
+        
+        .card-icon {
+            width: 3rem; /* 48px */
+            height: 3rem; /* 48px */
+            color: #f9fafb; /* gray-50 */
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-100 min-h-screen p-8">
+
+    <div class="container mx-auto max-w-5xl">
+        
+        <!-- Header --><header class="text-center mb-12">
+            <h1 class="text-4xl md:text-5xl font-bold text-white mb-4">
+                Learn Recursion Visually
+            </h1>
+            <p class="text-lg md:text-xl text-gray-400">
+                Stop guessing. See how recursion actually works step-by-step.
+            </p>
+        </header>
+
+        <!-- Visualization Grid --><main class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            
+            <!-- Card 1: Tower of Hanoi --><a href="tower_of_hanoi.html" class="card flex flex-col p-6 no-underline">
+                <div class="card-icon-bg p-3 w-max mb-4">
+                    <!-- Icon: Tower of Hanoi --><svg class="card-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 17h16M6 13h12M8 9h8M12 5v16"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2 21h20"></path>
+                    </svg>
+                </div>
+                <h2 class="text-2xl font-semibold text-white mb-2">Tower of Hanoi</h2>
+                <p class="text-gray-400 mb-4 flex-grow">
+                    See the classic puzzle unfold and understand how mutual recursion solves a complex problem elegantly.
+                </p>
+                <div class="text-indigo-400 font-medium flex items-center">
+                    Start Visualizer
+                    <svg class="w-5 h-5 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path></svg>
+                </div>
+            </a>
+
+            <!-- Card 2: Binary Search --><a href="binary-search.html" class="card flex flex-col p-6 no-underline">
+                <div class="card-icon-bg p-3 w-max mb-4">
+                    <!-- Icon: Binary Search --><svg class="card-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16"></path>
+                    </svg>
+                </div>
+                <h2 class="text-2xl font-semibold text-white mb-2">Binary Search</h2>
+                <p class="text-gray-400 mb-4 flex-grow">
+                    Watch how "divide and conquer" recursively splits an array to find a target in logarithmic time.
+                </p>
+                <div class="text-indigo-400 font-medium flex items-center">
+                    Start Visualizer
+                    <svg class="w-5 h-5 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path></svg>
+                </div>
+            </a>
+
+            <!-- Card 3: Flood Fill (FIXED ICON) --><a href="flood-fill.html" class="card flex flex-col p-6 no-underline">
+                <div class="card-icon-bg p-3 w-max mb-4">
+                    <!-- Icon: Flood Fill (simplified paint bucket) --><svg class="card-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 7V4a1 1 0 011-1h2a1 1 0 011 1v3"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11l-5 5m0 0l-5-5"></path>
+                    </svg>
+                </div>
+                <h2 class="text-2xl font-semibold text-white mb-2">Flood Fill</h2>
+                <p class="text-gray-400 mb-4 flex-grow">
+                    Visualize the "paint bucket" tool and see how recursion spreads outwards to fill a connected area.
+                </p>
+                <div class="text-indigo-400 font-medium flex items-center">
+                    Start Visualizer
+                    <svg class="w-5 h-5 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path></svg>
+                </div>
+            </a>
+
+            <!-- Card 4: Merge Sort (FIXED ICON) --><a href="ms.html" class="card flex flex-col p-6 no-underline">
+                <div class="card-icon-bg p-3 w-max mb-4">
+                    <!-- Icon: Merge Sort (simplified splitting and merging) --><svg class="card-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v3m0 10v3"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 15l-3 3m0 0l-3-3"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 9l3-3m0 0l3 3"></path>
+                    </svg>
+                </div>
+                <h2 class="text-2xl font-semibold text-white mb-2">Merge Sort</h2>
+                <p class="text-gray-400 mb-4 flex-grow">
+                    Break down an array to its smallest parts and then watch the "merge" step recursively build it back into a sorted list.
+                </p>
+                <div class="text-indigo-400 font-medium flex items-center">
+                    Start Visualizer
+                    <svg class="w-5 h-5 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path></svg>
+                </div>
+            </a>
+
+            <!-- Card 5: DFS (Depth First Search) (FIXED ICON) --><a href="dfs.html" class="card flex flex-col p-6 no-underline">
+                <div class="card-icon-bg p-3 w-max mb-4">
+                    <!-- Icon: DFS (simplified tree/graph traversal) --><svg class="card-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18V6m0 0a2 2 0 100-4 2 2 0 000 4zm0 0l-3 3m3-3l3 3"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 15h6"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 22a2 2 0 100-4 2 2 0 000 4z"></path>
+                    </svg>
+                </div>
+                <h2 class="text-2xl font-semibold text-white mb-2">Depth First Search</h2>
+                <p class="text-gray-400 mb-4 flex-grow">
+                    Follow the recursive call stack as it explores a graph, going as deep as possible down one path before backtracking.
+                </p>
+                <div class="text-indigo-400 font-medium flex items-center">
+                    Start Visualizer
+                    <svg class="w-5 h-5 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path></svg>
+                </div>
+            </a>
+            
+        </main>
+        
+        <footer class="text-center mt-12 text-gray-500">
+            <p>Select a topic to begin your visual journey into recursion.</p>
+        </footer>
+
+    </div>
+
+</body>
+</html>
