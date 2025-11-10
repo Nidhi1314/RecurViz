@@ -120,20 +120,77 @@
         .modal-backdrop.visible .modal-content {
             transform: scale(1);
         }
+
+        /* --- START: Code Highlighting Styles --- */
+        #codeDisplayContainer {
+            overflow-y: auto;
+            background-color: #0d1117;
+            border: 1px solid var(--border-color);
+            font-family: 'Consolas', 'Monaco', monospace;
+        }
+
+        #codeDisplayContainer pre, #codeDisplayContainer code {
+            height: 100%;
+        }
+
+        .code-line {
+            padding: 0.15rem 0.5rem;
+            display: block;
+            border-radius: 2px;
+            transition: background-color 0.2s ease-in-out;
+            white-space: pre-wrap;
+            min-height: 1.25rem;
+        }
+
+        .code-line.highlight {
+            background-color: #374151;
+            color: var(--text-primary);
+        }
+
+        /* Syntax Highlighting */
+        .cpp-keyword { color: #f97583; }
+        .cpp-function { color: #d2a8ff; }
+        .cpp-comment { color: #8b949e; }
+        .cpp-string { color: #a5d6ff; }
+        .cpp-number { color: #79c0ff; }
+        .cpp-variable { color: #ffa657; }
+        .cpp-operator { color: #f97583; }
+        .cpp-preprocessor { color: #8b949e; }
+        /* --- END: Code Highlighting Styles --- */
     </style>
 </head>
 <body class="flex flex-col items-center min-h-screen p-4 sm:p-6">
+    <div class="w-full bg-gray-800 p-3 text-center text-gray-300 -mx-4 sm:-mx-6 -mt-4 sm:-mt-6 mb-6 border-b border-gray-700 shadow-md">
+    <span>View this classic algorithm on LeetCode Discuss: </span>
+    <a href="https://leetcode.com/discuss/general-discussion/470927/tower-of-hanoi-algorithm/" 
+       target="_blank" 
+       rel="noopener noreferrer" 
+       class="font-medium text-indigo-400 hover:text-indigo-300 hover:underline">
+        Tower of Hanoi: Algorithm
+    </a>
+</div>
 
     <header class="w-full max-w-6xl mx-auto flex justify-center items-center mb-6">
         <h1 class="text-3xl sm:text-4xl font-bold">Tower of Hanoi</h1>
     </header>
 
     <div class="w-full max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
         <div class="lg:col-span-2">
             <canvas id="hanoiCanvas"></canvas>
         </div>
 
-        <div class="panel w-full p-6 space-y-6">
+        <div id="cppPanel" class="panel w-full p-6 flex flex-col">
+            <h3 class="text-xl font-semibold mb-2 flex-shrink-0">C++ Code</h3>
+            <div id="codeDisplayContainer" class="rounded-md flex-grow min-h-0">
+                <pre class="text-sm"><code id="codeDisplayArea" class="language-cpp"></code></pre>
+            </div>
+        </div>
+    </div>
+
+    <div class="w-full max-w-6xl mx-auto panel p-6 mt-6">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            
             <div>
                 <h2 class="text-2xl font-semibold mb-4">Controls</h2>
                 <div class="space-y-4">
@@ -149,23 +206,22 @@
                 </div>
             </div>
 
-            <div class="pt-6 border-t border-border-color space-y-6">
-                <div>
-                    <h3 class="text-xl font-semibold mb-3">Current Action</h3>
-                    <p id="currentActionText" class="text-center bg-bg-color p-3 rounded-md min-h-[60px] flex items-center justify-center text-secondary">Select a mode to begin.</p>
-                </div>
-                <div>
-                    <h3 class="text-xl font-semibold mb-3">Statistics</h3>
-                    <div class="space-y-2 text-secondary">
-                        <div class="flex justify-between items-center"><span>Moves:</span><span id="moveCount" class="font-bold text-lg text-primary">0</span></div>
-                        <div class="flex justify-between items-center"><span>Minimum Moves:</span><span id="minMoves" class="font-bold text-lg text-primary">0</span></div>
-                        <div id="timer-container" class="flex justify-between items-center hidden"><span>Time:</span><span id="timer" class="font-bold text-lg text-primary">00:00</span></div>
-                    </div>
+            <div>
+                <h3 class="text-xl font-semibold mb-3">Current Action</h3>
+                <p id="currentActionText" class="text-center bg-bg-color p-3 rounded-md min-h-[60px] flex items-center justify-center text-secondary">Select a mode to begin.</p>
+            </div>
+
+            <div>
+                <h3 class="text-xl font-semibold mb-3">Statistics</h3>
+                <div class="space-y-2 text-secondary">
+                    <div class="flex justify-between items-center"><span>Moves:</span><span id="moveCount" class="font-bold text-lg text-primary">0</span></div>
+                    <div class="flex justify-between items-center"><span>Minimum Moves:</span><span id="minMoves" class="font-bold text-lg text-primary">0</span></div>
+                    <div id="timer-container" class="flex justify-between items-center hidden"><span>Time:</span><span id="timer" class="font-bold text-lg text-primary">00:00</span></div>
                 </div>
             </div>
+
         </div>
     </div>
-    
     <div id="winModal" class="modal-backdrop">
         <div class="modal-content panel p-8 max-w-sm w-full text-center space-y-4">
             <h2 class="text-3xl font-bold text-green-500">Congratulations!</h2>
@@ -200,8 +256,10 @@
         const finalTime = document.getElementById('finalTime');
         const timerContainer = document.getElementById('timer-container');
         const timerDisplay = document.getElementById('timer');
-        
+        const codeDisplayArea = document.getElementById('codeDisplayArea');
+
         // --- Game State ---
+        const rodNames = ['A', 'B', 'C'];
         let numDisks = 4;
         let towers = [[], [], []];
         let moves = [];
@@ -209,7 +267,7 @@
         let isAnimating = false;
         let gameMode = null; // 'solution' or 'practice'
         let heldDisk = null;
-        let hoveredTower = -1; // -1 means no tower is hovered
+        let hoveredTower = -1;
 
         // --- Timer State ---
         let timerInterval;
@@ -243,14 +301,22 @@
         }
 
         // --- Setup and Drawing ---
+        
         function resizeCanvas() {
             const container = canvas.parentElement;
             canvas.width = container.clientWidth;
-            canvas.height = Math.min(window.innerHeight * 0.7, 500);
+            
+            const canvasHeight = Math.min(window.innerHeight * 0.7, 500);
+            canvas.height = canvasHeight; 
+
+            const cppPanel = document.getElementById('cppPanel');
+            if (cppPanel) {
+                cppPanel.style.height = `${canvasHeight}px`;
+            }
         }
 
         function setup() {
-            resizeCanvas();
+            resizeCanvas(); 
             moveCount = 0;
             moves = [];
             towers = [[], [], []];
@@ -258,6 +324,7 @@
             updateStats();
             currentActionText.textContent = 'Select a mode to begin.';
             resetTimer();
+            resetCodeDisplay();
             draw();
         }
 
@@ -274,14 +341,12 @@
             const towerWidth = 12, baseHeight = 20, towerHeight = canvas.height * 0.7;
             const baseY = canvas.height - baseHeight;
 
-            // Base with gradient
             const baseGradient = ctx.createLinearGradient(0, baseY, 0, canvas.height);
             baseGradient.addColorStop(0, baseColor);
             baseGradient.addColorStop(1, '#374151');
             ctx.fillStyle = baseGradient;
             ctx.fillRect(canvas.width * 0.05, baseY, canvas.width * 0.9, baseHeight);
 
-            // Poles with gradient
             for (let i = 0; i < 3; i++) {
                 const x = canvas.width / 6 + i * canvas.width / 3;
                 const poleGradient = ctx.createLinearGradient(x - towerWidth / 2, 0, x + towerWidth / 2, 0);
@@ -291,7 +356,6 @@
                 ctx.fillStyle = poleGradient;
                 ctx.fillRect(x - towerWidth / 2, baseY - towerHeight, towerWidth, towerHeight);
 
-                // Draw hover highlight
                 if (i === hoveredTower && gameMode === 'practice' && !isAnimating) {
                     ctx.fillStyle = 'rgba(255, 255, 255, 0.15)';
                     ctx.fillRect(x - canvas.width / 6, 0, canvas.width / 3, canvas.height - baseHeight);
@@ -317,7 +381,6 @@
                     ctx.fillStyle = gradient;
                     ctx.fillRect(x, y, diskWidth, diskHeight);
                     
-                    // Add a subtle top highlight for 3D effect
                     ctx.fillStyle = tinycolor(diskColors[disk - 1]).lighten(15).toString();
                     ctx.fillRect(x, y, diskWidth, 3);
                 }
@@ -329,7 +392,7 @@
             const diskWidth = 30 + (heldDisk.disk / numDisks) * (maxDiskWidth - 30);
             const towerX = canvas.width / 6 + hoveredTower * canvas.width / 3;
             const x = towerX - diskWidth / 2;
-            const y = 50; // Held position
+            const y = 50; 
             
             ctx.globalAlpha = 0.8;
             const gradient = ctx.createLinearGradient(x, y, x, y + diskHeight);
@@ -340,6 +403,65 @@
             ctx.globalAlpha = 1.0;
         }
 
+        // --- Code Highlighting Functions ---
+
+        function syntaxHighlight(text) {
+            let safeText = text.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            return safeText
+                .replace(/(\/\/.*)/g, '<span class="cpp-comment">$1</span>')
+                .replace(/(".*?"|'.*?')/g, '<span class="cpp-string">$1</span>')
+                .replace(/\b(void|int|char|if|return|else|cout|endl|std|using|namespace|include)\b/g, '<span class="cpp-keyword">$1</span>')
+                .replace(/(#include)/g, '<span class="cpp-preprocessor">$1</span>')
+                .replace(/\b(hanoi)\b/g, '<span class="cpp-function">$1</span>')
+                .replace(/\b(n|from|to|aux|N)\b/g, '<span class="cpp-variable">$1</span>')
+                .replace(/(&lt;&lt;|>>|==)/g, '<span class="cpp-operator">$1</span>')
+                .replace(/(\b[0-9]+\b)/g, '<span class="cpp-number">$1</span>');
+        }
+
+        function displayCppCode(n) {
+            const code = [
+                { line: 1, text: '#include <iostream>' },
+                { line: 2, text: 'using namespace std;' },
+                { line: 3, text: '' },
+                { line: 4, text: 'void hanoi(int n, char from, char to, char aux) {' },
+                { line: 5, text: '    if (n == 0) return;' },
+                { line: 6, text: '' },
+                { line: 7, text: '    hanoi(n - 1, from, aux, to);', id: 'call1' },
+                { line: 8, text: '    cout << "Move disk " << n << " from " << from << " to " << to << endl;', id: 'moveLine' },
+                { line: 9, text: '    hanoi(n - 1, aux, to, from);', id: 'call2' },
+                { line: 10, text: '}' },
+                { line: 11, text: '' },
+                { line: 12, text: 'int main() {' },
+                { line: 13, text: `    int N = ${n};`, id: 'nLine' },
+                { line: 14, text: '    // A = Source, C = Destination, B = Auxiliary' },
+                { line: 15, text: '    hanoi(N, \'A\', \'C\', \'B\');' , id: 'callMain'},
+                { line: 16, text: '    return 0;' },
+                { line: 17, text: '}' }
+            ];
+
+            codeDisplayArea.innerHTML = code.map(line => 
+                `<span class="code-line" id="${line.id || ''}">${syntaxHighlight(line.text)}</span>`
+            ).join('');
+        }
+
+        function highlightMoveLine(disk, fromRod, toRod) {
+            document.querySelector('.code-line.highlight')?.classList.remove('highlight');
+            const moveLineEl = document.getElementById('moveLine');
+            if (moveLineEl) {
+                moveLineEl.innerHTML = syntaxHighlight(`    cout << "Move disk " << ${disk} << " from " << '${rodNames[fromRod]}' << " to " << '${rodNames[toRod]}' << endl;`);
+                moveLineEl.classList.add('highlight');
+            }
+        }
+
+        function resetCodeDisplay() {
+            displayCppCode(numDisks);
+            const callLine = document.getElementById('callMain');
+            if (callLine) {
+                callLine.classList.add('highlight');
+            }
+        }
+
+        // --- Animation ---
         function animateMove(disk, from, to, onComplete) {
             isAnimating = true;
             let movingDisk = { disk, x: 0, y: 0 };
@@ -369,8 +491,8 @@
                     const direction = Math.sign(endX - movingDisk.x);
                     movingDisk.x += direction * animationSpeed;
                     if (Math.sign(endX - movingDisk.x) !== direction && endX !== movingDisk.x) {
-                         movingDisk.x = endX;
-                         stage = 'down';
+                        movingDisk.x = endX;
+                        stage = 'down';
                     }
                 } else if (stage === 'down') {
                     movingDisk.y += animationSpeed;
@@ -381,8 +503,7 @@
                     }
                 }
                 
-                draw(); // Redraw static elements
-                // Draw the moving disk
+                draw();
                 const gradient = ctx.createLinearGradient(movingDisk.x - diskWidth/2, movingDisk.y, movingDisk.x - diskWidth/2, movingDisk.y + diskHeight);
                 gradient.addColorStop(0, diskColors[disk - 1]);
                 gradient.addColorStop(1, tinycolor(diskColors[disk - 1]).darken(15).toString());
@@ -398,7 +519,7 @@
         function hanoi(n, source, destination, auxiliary) {
             if (n > 0) {
                 hanoi(n - 1, source, auxiliary, destination);
-                moves.push({ from: source, to: destination });
+                moves.push({ n: n, from: source, to: destination });
                 hanoi(n - 1, auxiliary, destination, source);
             }
         }
@@ -411,7 +532,8 @@
             isAnimating = true;
             setButtonsState(false);
             currentActionText.textContent = 'Starting solution...';
-            runNextSolutionMove();
+            resetCodeDisplay();
+            setTimeout(runNextSolutionMove, 250);
         }
         
         function runNextSolutionMove() {
@@ -424,8 +546,10 @@
             }
             const move = moves.shift();
             const disk = towers[move.from].pop();
-            currentActionText.innerHTML = `Move Disk <strong>${disk}</strong> from Tower <strong>${move.from + 1}</strong> to Tower <strong>${move.to + 1}</strong>`;
+            currentActionText.innerHTML = `Move Disk <strong>${disk}</strong> from Tower <strong>${rodNames[move.from]}</strong> to Tower <strong>${rodNames[move.to]}</strong>`;
             
+            highlightMoveLine(move.n, move.from, move.to); 
+
             animateMove(disk, move.from, move.to, () => {
                 towers[move.to].push(disk);
                 moveCount++;
@@ -441,6 +565,7 @@
             setButtonsState(false);
             resetButton.disabled = false;
             currentActionText.textContent = 'Click a tower to pick up a disk.';
+            resetCodeDisplay();
         }
         
         function handleUserMove(clickedTower) {
@@ -472,6 +597,8 @@
                     currentActionText.innerHTML = `Moving Disk <strong>${heldDisk.disk}</strong>...`;
                     const { disk, fromTower } = heldDisk;
                     
+                    highlightMoveLine(disk, fromTower, clickedTower); 
+
                     animateMove(disk, fromTower, clickedTower, () => {
                         towers[clickedTower].push(disk);
                         moveCount++;
@@ -531,6 +658,8 @@
             diskCountSlider.disabled = !enabled;
         }
 
+        // <-- THE STRAY 'Z' WAS HERE AND HAS BEEN REMOVED
+
         function updateStats() {
             moveCountDisplay.textContent = moveCount;
             minMovesDisplay.textContent = Math.pow(2, numDisks) - 1;
@@ -581,11 +710,10 @@
         
         // --- Initial Load ---
         document.addEventListener('DOMContentLoaded', () => {
-            // TinyColor library for color manipulation (makes gradients easier)
             const script = document.createElement('script');
             script.src = "https://cdnjs.cloudflare.com/ajax/libs/tinycolor/1.6.0/tinycolor.min.js";
             script.onload = () => {
-                setup(); // Directly setup the dark theme
+                setup();
             };
             document.head.appendChild(script);
         });
