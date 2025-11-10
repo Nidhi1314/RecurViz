@@ -226,6 +226,16 @@
 </head>
 <body class="flex flex-col items-center min-h-screen p-4 sm:p-6">
 
+    <div class="w-full bg-gray-800 p-3 text-center text-gray-300 -mx-4 sm:-mx-6 -mt-4 sm:-mt-6 mb-6 border-b border-gray-700 shadow-md">
+        <span>View this algorithm on LeetCode: </span>
+        <a href="https://leetcode.com/problems/binary-search/" 
+           target="_blank" 
+           rel="noopener noreferrer" 
+           class="font-medium text-indigo-400 hover:text-indigo-300 hover:underline">
+            Binary Search (Problem 704)
+        </a>
+    </div>
+
     <header class="w-full max-w-6xl mx-auto flex justify-center items-center mb-6">
         <h1 class="text-3xl sm:text-4xl font-bold">Binary Search</h1>
     </header>
@@ -328,22 +338,22 @@
                 { line: 4, text: '' },
                 // 'initHigh' maps to the function signature, as it's the "start"
                 { line: 5, text: 'int binarySearch(vector<int>& arr, int low, int high, int target) {', id: 'initHigh' },
-                { line: 6, text: '    // Base case: not found' },
+                { line: 6, text: '    // Base case: not found' },
                 // 'whileLoop' maps to the base case check (the equivalent of 'while(low <= high)')
-                { line: 7, text: '    if (low > high)', id: 'whileLoop' },
-                { line: 8, text: '        return -1;', id: 'returnNotFound' },
+                { line: 7, text: '    if (low > high)', id: 'whileLoop' },
+                { line: 8, text: '        return -1;', id: 'returnNotFound' },
                 { line: 9, text: '' },
-                { line: 10, text: '    int mid = low + (high - low) / 2;', id: 'calcMid' },
+                { line: 10, text: '    int mid = low + (high - low) / 2;', id: 'calcMid' },
                 { line: 11, text: '' },
-                { line: 12, text: '    // Check if mid is target' },
-                { line: 13, text: '    if (arr[mid] == target)', id: 'checkFound' },
-                { line: 14, text: '        return mid;', id: 'returnFound' },
+                { line: 12, text: '    // Check if mid is target' },
+                { line: 13, text: '    if (arr[mid] == target)', id: 'checkFound' },
+                { line: 14, text: '        return mid;', id: 'returnFound' },
                 // 'checkRight' maps to the 'else if' condition
-                { line: 15, text: '    else if (arr[mid] < target)', id: 'checkRight' },
-                { line: 16, text: '        return binarySearch(arr, mid + 1, high, target);', id: 'goRight' },
+                { line: 15, text: '    else if (arr[mid] < target)', id: 'checkRight' },
+                { line: 16, text: '        return binarySearch(arr, mid + 1, high, target);', id: 'goRight' },
                 // 'checkLeft' maps to the 'else' block
-                { line: 17, text: '    else', id: 'checkLeft' },
-                { line: 18, text: '        return binarySearch(arr, low, mid - 1, target);', id: 'goLeft' },
+                { line: 17, text: '    else', id: 'checkLeft' },
+                { line: 18, text: '        return binarySearch(arr, low, mid - 1, target);', id: 'goLeft' },
                 { line: 19, text: '}' },
             ];
 
@@ -475,14 +485,18 @@
             
             animationSteps.push({ low, high, mid: -1, lineId: 'initHigh', message: `Start: low = 0, high = ${high}` });
 
-            while (low <= high) {
+            function searchRecursive(low, high) {
                 animationSteps.push({ low, high, mid: -1, lineId: 'whileLoop', message: `Checking if ${low} <= ${high}` });
-                
+                if (low > high) {
+                    animationSteps.push({ low, high, mid: -1, lineId: 'returnNotFound', success: false, message: `${target} not found in the array.` });
+                    return;
+                }
+
                 let mid = Math.floor(low + (high - low) / 2);
                 animationSteps.push({ low, high, mid, lineId: 'calcMid', message: `Calculating mid... ${mid}` });
 
                 const midVal = array[mid];
-                
+
                 // Determine comparison result
                 let comparisonResult = 'equal';
                 if (midVal < target) comparisonResult = 'less';
@@ -491,9 +505,9 @@
                 // Add the comparison step
                 animationSteps.push({ 
                     low, high, mid, 
-                    lineId: 'checkFound', // <-- This is the key step
+                    lineId: 'checkFound',
                     message: `Comparing: Is ${midVal} (mid) ${comparisonResult} to ${target} (target)?`,
-                    comparison: comparisonResult // Pass to renderer
+                    comparison: comparisonResult
                 });
 
                 if (midVal === target) {
@@ -503,15 +517,16 @@
                 
                 if (midVal < target) {
                     animationSteps.push({ low, high, mid, lineId: 'goRight', message: `${midVal} < ${target}. Search right.` });
-                    low = mid + 1;
+                    searchRecursive(mid + 1, high);
                 } else {
                     animationSteps.push({ low, high, mid, lineId: 'goLeft', message: `${midVal} > ${target}. Search left.` });
-                    high = mid - 1;
+                    searchRecursive(low, mid - 1);
                 }
             }
-            
-            animationSteps.push({ low, high, mid: -1, lineId: 'returnNotFound', success: false, message: `${target} not found in the array.` });
+
+            searchRecursive(low, high);
         }
+
 
         // --- (CORRECTED) runNextAnimationStep Function ---
         function runNextAnimationStep() {
