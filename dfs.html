@@ -192,6 +192,16 @@
 </head>
 <body class="flex flex-col items-center min-h-screen p-4 sm:p-6">
 
+    <div class="w-full bg-gray-800 p-3 text-center text-gray-300 -mx-4 sm:-mx-6 -mt-4 sm:-mt-6 mb-6 border-b border-gray-700 shadow-md">
+        <span>View a classic DFS grid problem on LeetCode: </span>
+        <a href="https://leetcode.com/problems/number-of-islands/" 
+           target="_blank" 
+           rel="noopener noreferrer" 
+           class="font-medium text-indigo-400 hover:text-indigo-300 hover:underline">
+            Number of Islands (Problem 200)
+        </a>
+    </div>
+
     <header class="w-full max-w-6xl mx-auto flex justify-center items-center mb-6">
         <h1 class="text-3xl sm:text-4xl font-bold">Depth-First Search</h1>
     </header>
@@ -543,8 +553,7 @@
             if (gameMode === 'edit') {
                 gameMode = null;
                 editButton.textContent = 'Edit Grid';
-                editButton.classList.replace('btn-secondary', 'btn-primary');
-                editButton.classList.replace('btn-primary', 'btn-secondary'); // Fix style toggle
+                editButton.classList.replace('btn-primary', 'btn-secondary'); 
                 visualizationArea.classList.remove('edit-mode');
                 messageText.textContent = 'Exited edit mode.';
             } else {
