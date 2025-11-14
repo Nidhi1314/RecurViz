@@ -380,18 +380,6 @@ of this software and associated documentation files...
 
 ---
 
-## 👥 Team
-
-**Computer Graphics Project - [Your University Name]**
-
-| Name | Role | Contact |
-|------|------|---------|
-| [Your Name] | Lead Developer | [email/github] |
-| [Team Member 2] | Algorithm Implementation | [email/github] |
-| [Team Member 3] | UI/UX Design | [email/github] |
-| [Team Member 4] | Documentation | [email/github] |
-
----
 
 ## 🙏 Acknowledgments
 
@@ -402,14 +390,6 @@ of this software and associated documentation files...
 
 ---
 
-## 📞 Contact & Links
-
-- **GitHub Repository**: [github.com/yourusername/recurviz](https://github.com/yourusername/recurviz)
-- **Live Demo**: [recurviz.netlify.app](https://recurviz.netlify.app) *(if deployed)*
-- **Documentation**: [Wiki](https://github.com/yourusername/recurviz/wiki)
-- **Report Issues**: [Issue Tracker](https://github.com/yourusername/recurviz/issues)
-
----
 
 ## ⭐ Star This Repository
 
